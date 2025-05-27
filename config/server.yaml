@@ -1,0 +1,55 @@
+server:
+  name: pr-recommender
+  version: 1.0.0
+  port: 8082
+  instructions: "This server provides tools for PR recommendation, grouping, and validation."
+
+strategies:
+  semantic_grouping:
+    enabled: true
+    llm_model: "gpt-4"
+    temperature: 0.3
+    prompt_template: "semantic_grouping_v1"
+  
+  directory_based:
+    enabled: true
+    max_depth: 3
+    min_files_per_dir: 2
+  
+  dependency_analysis:
+    enabled: true
+    languages:
+      - python
+      - javascript
+      - typescript
+
+validation_rules:
+  size_check:
+    enabled: true
+    max_files: 50
+    max_size_mb: 100
+  
+  conflict_check:
+    enabled: true
+    check_dependencies: true
+  
+  test_coverage:
+    enabled: true
+    require_tests: true
+
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/pr_recommender.log"
+  max_size: 10485760  # 10MB
+  backup_count: 5
+
+a2a:
+  enabled: true
+  known_servers:
+    git-analyzer:
+      url: "http://localhost:8081"
+      protocol: "http"
+    orchestrator:
+      url: "http://localhost:8080"
+      protocol: "http"
