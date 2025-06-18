@@ -2,9 +2,10 @@
 import logging
 from pathlib import Path
 
+from mcp_shared_lib.models import FileStatus, OutstandingChangesAnalysis
+
 from pr_recommender.config import settings
-from pr_recommender.models.git_models import FileStatus, OutstandingChangesAnalysis
-from pr_recommender.models.pr_models import ChangeGroup, PRRecommendation, PRStrategy
+from pr_recommender.models.pr.recommendations import ChangeGroup, PRRecommendation, PRStrategy
 from pr_recommender.services.atomicity_validator import AtomicityValidator
 from pr_recommender.services.semantic_analyzer import SemanticAnalyzer
 

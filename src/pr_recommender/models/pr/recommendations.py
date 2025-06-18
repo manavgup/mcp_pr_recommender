@@ -3,9 +3,8 @@
 from datetime import datetime
 from typing import Any, Literal
 
+from mcp_shared_lib.models import FileStatus, OutstandingChangesAnalysis
 from pydantic import BaseModel, Field
-
-from .git_models import FileStatus, OutstandingChangesAnalysis
 
 
 class ChangeGroup(BaseModel):

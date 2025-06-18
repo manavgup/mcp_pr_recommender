@@ -1,16 +1,13 @@
 """Enhanced semantic analyzer that handles all grouping logic."""
 
-import asyncio
 import json
 import logging
-from pathlib import Path
-from typing import Any
 
 import openai
+from mcp_shared_lib.models import FileStatus, OutstandingChangesAnalysis
 
 from pr_recommender.config import settings
-from pr_recommender.models.git_models import FileStatus, OutstandingChangesAnalysis
-from pr_recommender.models.pr_models import ChangeGroup, PRRecommendation
+from pr_recommender.models.pr.recommendations import ChangeGroup, PRRecommendation
 
 
 class SemanticAnalyzer:

@@ -841,6 +841,26 @@ rich = ["rich (>=13.9.4)"]
 ws = ["websockets (>=15.0.1)"]
 
 [[package]]
+name = "mcp-shared-lib"
+version = "0.1.0"
+description = "Shared models and services for MCP components"
+optional = false
+python-versions = ">=3.10,<4.0"
+groups = ["main"]
+files = []
+develop = true
+
+[package.dependencies]
+fastmcp = "^2.6.1"
+openai = "^1.0.0"
+pydantic = "^2.5.0"
+pydantic-settings = "^2.1.0"
+
+[package.source]
+type = "directory"
+url = "../mcp_shared_lib"
+
+[[package]]
 name = "mdurl"
 version = "0.1.2"
 description = "Markdown URL utilities"
@@ -1882,4 +1902,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10,<4.0"
-content-hash = "9f8117f456b602a59905997e2b8c97d38e5ffe5f0876b4daf401f80f924048a4"
+content-hash = "b8bbef8359e064d257032d2e5307f17bf85011763ebea95c2212e4c449df7000"

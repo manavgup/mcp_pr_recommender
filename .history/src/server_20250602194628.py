@@ -9,9 +9,7 @@ from pathlib import Path
 import yaml
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # Import FastMCP
@@ -31,9 +29,7 @@ class PRRecommenderServer:
         self.server_config = self.config.get("server", {})
 
         # Create FastMCP instance
-        logger.info(
-            f"Creating FastMCP server with name: {self.server_config.get('name', 'PR Recommender')}"
-        )
+        logger.info(f"Creating FastMCP server with name: {self.server_config.get('name', 'PR Recommender')}")
         self.mcp = FastMCP(
             name=self.server_config.get("name", "PR Recommender"),
             instructions=self.server_config.get(
@@ -98,9 +94,7 @@ class PRRecommenderServer:
 
         # Tool 2: validate_pr_groups
         @self.mcp.tool(name="validate_pr_groups")
-        async def validate_pr_groups(
-            groups: List[Dict[str, Any]], validation_rules: Optional[List[str]] = None
-        ):
+        async def validate_pr_groups(groups: List[Dict[str, Any]], validation_rules: Optional[List[str]] = None):
             """
             Validate suggested PR groupings against a set of rules.
 
@@ -123,9 +117,7 @@ class PRRecommenderServer:
 
         # Tool 3: generate_pr_metadata
         @self.mcp.tool(name="generate_pr_metadata")
-        async def generate_pr_metadata(
-            pr_group: Dict[str, Any], template: str = "standard"
-        ):
+        async def generate_pr_metadata(pr_group: Dict[str, Any], template: str = "standard"):
             """
             Generate PR titles, descriptions, and labels.
 

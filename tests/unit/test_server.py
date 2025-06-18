@@ -103,7 +103,7 @@ async def get_mcp_local_repo_analyzer_client():
     from fastmcp.client.transports import PythonStdioTransport
 
     # Path to the other MCP server
-    analyzer_path = "../../mcp_local_repo_analyzer/local_git_analyzer/main.py"
+    analyzer_path = "../mcp_local_repo_analyzer/src/local_git_analyzer/main.py"
 
     if not Path(analyzer_path).exists():
         raise FileNotFoundError(f"mcp_local_repo_analyzer not found at {analyzer_path}")
@@ -111,7 +111,7 @@ async def get_mcp_local_repo_analyzer_client():
     transport = PythonStdioTransport(
         script_path=analyzer_path,
         python_cmd="python",
-        env={**os.environ, "PYTHONPATH": str(Path("../../mcp_local_repo_analyzer").resolve())},
+        env={**os.environ, "PYTHONPATH": str(Path("../mcp_local_repo_analyzer").resolve())},
     )
     return Client(transport)
 

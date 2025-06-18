@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 
 from pr_recommender.config import settings
-from pr_recommender.models.pr_models import ChangeGroup
+from pr_recommender.models.pr.recommendations import ChangeGroup
 
 
 class AtomicityValidator:

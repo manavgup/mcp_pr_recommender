@@ -8,6 +8,7 @@ packages = [{include = "pr_recommender", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10,<4.0"
+mcp-shared-lib = {path = "../mcp_shared_lib", develop = true}
 fastmcp = "^2.6.1"
 pydantic = "^2.0.0"
 pydantic-settings = "^2.0.0"

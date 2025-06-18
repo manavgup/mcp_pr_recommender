@@ -2,12 +2,8 @@
 import logging
 from typing import Any
 
-from pr_recommender.models.git_models import (
-    ChangeCategorization,
-    FileStatus,
-    OutstandingChangesAnalysis,
-    RiskAssessment,
-)
+from mcp_shared_lib.models import ChangeCategorization, FileStatus, OutstandingChangesAnalysis, RiskAssessment
+
 from pr_recommender.services.semantic_analyzer import SemanticAnalyzer
 
 
@@ -80,15 +76,15 @@ class PRRecommenderTool:
             total_changes_in_prs = sum(pr.total_lines_changed for pr in pr_recommendations)
 
             # Enhanced validation - check if untracked files are included
-            untracked_files = [f for f in all_files if f.file_type == 'untracked']
+            untracked_files = [f for f in all_files if f.change_type == "untracked"]
             untracked_count = len(untracked_files)
-            
+
             untracked_in_prs = 0
             for pr in pr_recommendations:
                 for file_path in pr.files:
                     # Find the file and check if it's untracked
                     for f in all_files:
-                        if f.path == file_path and f.file_type == 'untracked':
+                        if f.path == file_path and f.change_type == "untracked":
                             untracked_in_prs += 1
                             break
 
@@ -155,30 +151,30 @@ class PRRecommenderTool:
     def _extract_all_files(self, analysis_data: dict[str, Any]) -> list[FileStatus]:
         """Extract all files from analysis_data, handling different formats."""
         all_files = []
-        
+
         # Method 1: Use comprehensive analysis if available (from enhanced test)
         if "all_files" in analysis_data:
             self.logger.info(f"Using comprehensive file analysis with {len(analysis_data['all_files'])} files")
             for file_data in analysis_data["all_files"]:
                 file_status = self._create_file_status(file_data)
                 all_files.append(file_status)
-        
+
         # Method 2: Fallback - combine individual file arrays
         else:
             self.logger.info("Using individual file arrays - combining all types")
-            
+
             # Process all file types the same way
             file_arrays = [
                 ("working_directory_files", "tracked changes"),
-                ("staged_files", "staged files"), 
-                ("untracked_files", "untracked files")
+                ("staged_files", "staged files"),
+                ("untracked_files", "untracked files"),
             ]
-            
+
             for array_key, description in file_arrays:
                 for file_data in analysis_data.get(array_key, []):
                     file_status = self._create_file_status(file_data)
                     all_files.append(file_status)
-        
+
         return all_files
 
     def _create_file_status(self, file_data: dict[str, Any]) -> FileStatus:
@@ -199,11 +195,11 @@ class PRRecommenderTool:
         return file_status
 
     def _create_analysis_object(
-    self, analysis_data: dict[str, Any], all_files: list[FileStatus]
-) -> OutstandingChangesAnalysis:
+        self, analysis_data: dict[str, Any], all_files: list[FileStatus]
+    ) -> OutstandingChangesAnalysis:
         """Create OutstandingChangesAnalysis object from the data."""
         from datetime import datetime
-        
+
         # Extract risk assessment
         risk_data = analysis_data.get("risk_assessment", {})
         risk_assessment = RiskAssessment(
