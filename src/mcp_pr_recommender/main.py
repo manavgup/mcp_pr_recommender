@@ -7,8 +7,8 @@ from typing import Any
 from fastmcp import Context, FastMCP
 from pydantic import Field
 
-from pr_recommender.config import settings
-from pr_recommender.tools import FeasibilityAnalyzerTool, PRRecommenderTool, StrategyManagerTool, ValidatorTool
+from mcp_pr_recommender.config import settings
+from mcp_pr_recommender.tools import FeasibilityAnalyzerTool, PRRecommenderTool, StrategyManagerTool, ValidatorTool
 
 
 def setup_logging():

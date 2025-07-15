@@ -12,14 +12,15 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 import json
 
-# Import shared fixtures from mcp_shared_lib
-from mcp_shared_lib.tests.conftest import *
-from mcp_shared_lib.tests.factories import (
+# TODO: [MCP monorepo] This import relies on PYTHONPATH including the monorepo root so that
+# mcp_shared_lib.test_utils.factories is importable. This is a short-term workaround.
+# Best practice is to move shared test utilities into a real subpackage under src/ (e.g., mcp_shared_lib.test_utils)
+# and import from there. Refactor this when possible.
+from mcp_shared_lib.test_utils.factories import (
     FileChangeFactory, 
     PRRecommendationFactory,
     TestScenarioFactory,
-    create_file_changes,
-    create_pr_recommendations
+    create_file_changes
 )
 
 
@@ -544,7 +545,61 @@ def pr_recommender_integration_data():
                 "categories": ["authentication", "models", "configuration", "testing"]
             }
         },
-        "expected_recommendations": create_pr_recommendations(count=3),
+        "expected_recommendations": [
+            {
+                "id": "pr_001",
+                "title": "Add user authentication system",
+                "description": "Implement comprehensive user authentication with login, logout, and session management.",
+                "files": [
+                    "src/auth/login.py",
+                    "src/auth/logout.py",
+                    "src/auth/session.py",
+                    "tests/test_auth.py"
+                ],
+                "estimated_size": "large",
+                "priority": "high",
+                "risk_level": "medium",
+                "confidence": 0.92,
+                "labels": ["feature", "authentication", "security"],
+                "reviewers": ["senior-dev", "security-team"],
+                "estimated_review_time": "2-3 hours"
+            },
+            {
+                "id": "pr_002", 
+                "title": "Update user and profile models",
+                "description": "Enhance user model with new fields and improve profile management.",
+                "files": [
+                    "src/models/user.py",
+                    "src/models/profile.py",
+                    "tests/test_user_model.py",
+                    "migrations/0002_user_updates.py"
+                ],
+                "estimated_size": "medium",
+                "priority": "medium",
+                "risk_level": "low",
+                "confidence": 0.88,
+                "labels": ["enhancement", "models"],
+                "reviewers": ["backend-team"],
+                "estimated_review_time": "1-2 hours"
+            },
+            {
+                "id": "pr_003",
+                "title": "Critical configuration updates",
+                "description": "Update database and authentication configuration for production deployment.",
+                "files": [
+                    "config/database.json",
+                    "config/auth.yaml",
+                    "docs/deployment.md"
+                ],
+                "estimated_size": "small",
+                "priority": "critical",
+                "risk_level": "high",
+                "confidence": 0.95,
+                "labels": ["config", "deployment", "critical"],
+                "reviewers": ["devops-team", "senior-dev"],
+                "estimated_review_time": "30-60 minutes"
+            }
+        ],
         "validation_results": {
             "all_valid": True,
             "warnings": ["Large changeset detected"],

@@ -4,10 +4,10 @@ from pathlib import Path
 
 from mcp_shared_lib.models import FileStatus, OutstandingChangesAnalysis
 
-from pr_recommender.config import settings
-from pr_recommender.models.pr.recommendations import ChangeGroup, PRRecommendation, PRStrategy
-from pr_recommender.services.atomicity_validator import AtomicityValidator
-from pr_recommender.services.semantic_analyzer import SemanticAnalyzer
+from mcp_pr_recommender.config import settings
+from mcp_pr_recommender.models.pr.recommendations import ChangeGroup, PRRecommendation, PRStrategy
+from mcp_pr_recommender.services.atomicity_validator import AtomicityValidator
+from mcp_pr_recommender.services.semantic_analyzer import SemanticAnalyzer
 
 
 class GroupingEngine:

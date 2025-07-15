@@ -6,8 +6,8 @@ import logging
 import openai
 from mcp_shared_lib.models import FileStatus, OutstandingChangesAnalysis
 
-from pr_recommender.config import settings
-from pr_recommender.models.pr.recommendations import ChangeGroup, PRRecommendation
+from mcp_pr_recommender.config import settings
+from mcp_pr_recommender.models.pr.recommendations import ChangeGroup, PRRecommendation
 
 
 class SemanticAnalyzer:

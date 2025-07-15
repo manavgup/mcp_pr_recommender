@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from pr_recommender.config import settings
+from mcp_pr_recommender.config import settings
 
 
 class StrategyManagerTool:

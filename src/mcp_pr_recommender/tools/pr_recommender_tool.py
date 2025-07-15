@@ -4,7 +4,7 @@ from typing import Any
 
 from mcp_shared_lib.models import ChangeCategorization, FileStatus, OutstandingChangesAnalysis, RiskAssessment
 
-from pr_recommender.services.semantic_analyzer import SemanticAnalyzer
+from mcp_pr_recommender.services.semantic_analyzer import SemanticAnalyzer
 
 
 class PRRecommenderTool:
