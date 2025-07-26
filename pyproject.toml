@@ -23,6 +23,7 @@ pydantic = "^2.5.0"
 typing-extensions = "^4.8.0"
 pathlib = "^1.0.1"
 click = "^8.1.7"
+openai = "^1.0.0"
 mcp-shared-lib = {path = "../mcp_shared_lib", develop = true}
 
 [tool.poetry.group.test.dependencies]

@@ -1,106 +1,392 @@
 #!/usr/bin/env python3
-"""FastMCP server for PR recommendations."""
+"""FastMCP PR Recommender Server.
 
-import logging
-from typing import Any
+Copyright 2025
+SPDX-License-Identifier: Apache-2.0
+Author: Manav Gupta <manavg@gmail.com>
 
-from fastmcp import Context, FastMCP
-from pydantic import Field
+Main entry point for the PR recommender server with both STDIO and HTTP transport support.
+Provides server setup, tool registration, and server execution.
+"""
 
-from mcp_pr_recommender.config import settings
-from mcp_pr_recommender.tools import FeasibilityAnalyzerTool, PRRecommenderTool, StrategyManagerTool, ValidatorTool
+import asyncio
+import sys
+import argparse
+import traceback
+from contextlib import asynccontextmanager
+
+from fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
+from mcp_shared_lib.utils import logging_service
+
+from mcp_pr_recommender.tools import (
+    FeasibilityAnalyzerTool,
+    PRRecommenderTool,
+    StrategyManagerTool,
+    ValidatorTool,
+)
+
+logger = logging_service.get_logger(__name__)
+
+# Global initialization state
+_server_initialized = False
+_initialization_lock = asyncio.Lock()
 
 
-def setup_logging():
-    """Setup logging configuration."""
-    logging.basicConfig(
-        level=getattr(logging, settings.log_level.upper()),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
+@asynccontextmanager
+async def lifespan(app):
+    """Manage server lifecycle for proper startup and shutdown."""
+    global _server_initialized
+    logger.info("FastMCP server starting up...")
+    try:
+        # Add a small delay to ensure all components are ready
+        await asyncio.sleep(0.1)
+        async with _initialization_lock:
+            _server_initialized = True
+        logger.info("FastMCP server initialization completed")
+        yield
+    except Exception as e:
+        logger.error(f"Error during server lifecycle: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
+    finally:
+        logger.info("FastMCP server shutting down...")
+        async with _initialization_lock:
+            _server_initialized = False
 
 
-def create_server() -> FastMCP:
-    """Create and configure the FastMCP server."""
+def create_server() -> tuple[FastMCP, dict]:
+    """Create and configure the FastMCP server.
 
-    mcp = FastMCP(
-        name="PR Recommender",
-        instructions="""
-        Intelligent PR boundary detection and recommendation system.
+    Returns:
+        Tuple of (FastMCP server instance, services dict).
+    """
+    try:
+        logger.info("Creating FastMCP server instance...")
 
-        This server analyzes git changes and generates atomic, logically-grouped
-        PR recommendations optimized for code review efficiency and deployment safety.
+        # Create the FastMCP server with proper lifecycle management
+        mcp = FastMCP(
+            name="PR Recommender",
+            version="1.0.0",
+            lifespan=lifespan,
+            instructions=""" \
+            Intelligent PR boundary detection and recommendation system.
 
-        Available tools:
-        - generate_pr_recommendations: Main tool to generate PR recommendations from git analysis
-        - analyze_pr_feasibility: Analyze feasibility and risks of specific recommendations
-        - get_strategy_options: Get available grouping strategies and settings
-        - validate_pr_recommendations: Validate generated recommendations for quality
+            This server analyzes git changes and generates atomic, logically-grouped
+            PR recommendations optimized for code review efficiency and deployment safety.
 
-        Input: Expects git analysis data from mcp_local_repo_analyzer
-        Output: Structured PR recommendations with titles, descriptions, and rationale
-        """,
-    )
+            Available tools:
+            - generate_pr_recommendations: Main tool to generate PR recommendations from git analysis
+            - analyze_pr_feasibility: Analyze feasibility and risks of specific recommendations
+            - get_strategy_options: Get available grouping strategies and settings
+            - validate_pr_recommendations: Validate generated recommendations for quality
 
-    # Initialize tools
-    mcp.pr_generator = PRRecommenderTool()
-    mcp.feasibility_analyzer = FeasibilityAnalyzerTool()
-    mcp.strategy_manager = StrategyManagerTool()
-    mcp.validator = ValidatorTool()
+            Input: Expects git analysis data from mcp_local_repo_analyzer
+            Output: Structured PR recommendations with titles, descriptions, and rationale
 
-    @mcp.tool()
-    async def generate_pr_recommendations(
-        ctx: Context,
-        analysis_data: dict[str, Any] = Field(..., description="Git analysis data from mcp_local_repo_analyzer"),
-        strategy: str = Field(default="semantic", description="Grouping strategy to use"),
-        max_files_per_pr: int = Field(default=8, description="Maximum files per PR"),
-    ) -> dict[str, Any]:
-        """Generate PR recommendations from git analysis data."""
-        await ctx.info(f"Generating PR recommendations using {strategy} strategy")
-        return await mcp.pr_generator.generate_recommendations(analysis_data, strategy, max_files_per_pr)
+            Provide git analysis data to generate recommendations, or use individual tools
+            for specific analysis tasks.
+            """,
+        )
+        logger.info("FastMCP server instance created successfully")
 
-    @mcp.tool()
-    async def analyze_pr_feasibility(
-        ctx: Context,
-        pr_recommendation: dict[str, Any] = Field(..., description="PR recommendation to analyze"),
-    ) -> dict[str, Any]:
-        """Analyze the feasibility and risks of a specific PR recommendation."""
-        await ctx.info("Analyzing PR feasibility")
-        return await mcp.feasibility_analyzer.analyze_feasibility(pr_recommendation)
+        # Add health check endpoints for HTTP mode
+        @mcp.custom_route("/health", methods=["GET"])
+        async def health_check(request: Request) -> JSONResponse:
+            return JSONResponse({
+                "status": "ok", 
+                "service": "PR Recommender",
+                "version": "1.0.0",
+                "initialized": _server_initialized
+            })
+        
+        @mcp.custom_route("/healthz", methods=["GET"]) 
+        async def health_check_z(request: Request) -> JSONResponse:
+            return JSONResponse({
+                "status": "ok", 
+                "service": "PR Recommender",
+                "version": "1.0.0",
+                "initialized": _server_initialized
+            })
 
-    @mcp.tool()
-    async def get_strategy_options(
-        ctx: Context,
-    ) -> dict[str, Any]:
-        """Get available PR grouping strategies and their descriptions."""
-        await ctx.info("Retrieving available strategies")
-        return await mcp.strategy_manager.get_strategies()
+        # Initialize services with error handling
+        logger.info("Initializing services...")
+        
+        try:
+            pr_generator = PRRecommenderTool()
+            logger.info("PRRecommenderTool initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize PRRecommenderTool: {e}")
+            raise
+            
+        try:
+            feasibility_analyzer = FeasibilityAnalyzerTool()
+            logger.info("FeasibilityAnalyzerTool initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize FeasibilityAnalyzerTool: {e}")
+            raise
+            
+        try:
+            strategy_manager = StrategyManagerTool()
+            logger.info("StrategyManagerTool initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize StrategyManagerTool: {e}")
+            raise
+            
+        try:
+            validator = ValidatorTool()
+            logger.info("ValidatorTool initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize ValidatorTool: {e}")
+            raise
 
-    @mcp.tool()
-    async def validate_pr_recommendations(
-        ctx: Context,
-        recommendations: list[dict[str, Any]] = Field(..., description="List of PR recommendations to validate"),
-    ) -> dict[str, Any]:
-        """Validate a set of PR recommendations for completeness and atomicity."""
-        await ctx.info(f"Validating {len(recommendations)} PR recommendations")
-        return await mcp.validator.validate_recommendations(recommendations)
+        # Create services dict for dependency injection
+        services = {
+            'pr_generator': pr_generator,
+            'feasibility_analyzer': feasibility_analyzer,
+            'strategy_manager': strategy_manager,
+            'validator': validator,
+        }
+        
+        logger.info("All services initialized successfully")
+        return mcp, services
+        
+    except Exception as e:
+        logger.error(f"Failed to create server: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
 
-    return mcp
+
+def register_tools(mcp: FastMCP):
+    """Register all tools with the FastMCP server.
+
+    Args:
+        mcp: FastMCP server instance.
+    """
+    try:
+        logger.info("Starting tool registration")
+        
+        from typing import Any
+        from fastmcp import Context
+        from pydantic import Field
+
+        @mcp.tool()
+        async def generate_pr_recommendations(
+            ctx: Context,
+            analysis_data: dict[str, Any] = Field(
+                ..., description="Git analysis data from mcp_local_repo_analyzer"
+            ),
+            strategy: str = Field(
+                default="semantic", description="Grouping strategy to use"
+            ),
+            max_files_per_pr: int = Field(default=8, description="Maximum files per PR"),
+        ) -> dict[str, Any]:
+            """Generate PR recommendations from git analysis data."""
+            await ctx.info(f"Generating PR recommendations using {strategy} strategy")
+            try:
+                return await mcp.pr_generator.generate_recommendations(
+                    analysis_data, strategy, max_files_per_pr
+                )
+            except Exception as e:
+                await ctx.error(f"Failed to generate PR recommendations: {str(e)}")
+                return {"error": f"Failed to generate recommendations: {str(e)}"}
+
+        @mcp.tool()
+        async def analyze_pr_feasibility(
+            ctx: Context,
+            pr_recommendation: dict[str, Any] = Field(
+                ..., description="PR recommendation to analyze"
+            ),
+        ) -> dict[str, Any]:
+            """Analyze the feasibility and risks of a specific PR recommendation."""
+            await ctx.info("Analyzing PR feasibility")
+            try:
+                return await mcp.feasibility_analyzer.analyze_feasibility(pr_recommendation)
+            except Exception as e:
+                await ctx.error(f"Failed to analyze PR feasibility: {str(e)}")
+                return {"error": f"Failed to analyze feasibility: {str(e)}"}
+
+        @mcp.tool()
+        async def get_strategy_options(
+            ctx: Context,
+        ) -> dict[str, Any]:
+            """Get available PR grouping strategies and their descriptions."""
+            await ctx.info("Retrieving available strategies")
+            try:
+                return await mcp.strategy_manager.get_strategies()
+            except Exception as e:
+                await ctx.error(f"Failed to get strategy options: {str(e)}")
+                return {"error": f"Failed to get strategies: {str(e)}"}
+
+        @mcp.tool()
+        async def validate_pr_recommendations(
+            ctx: Context,
+            recommendations: list[dict[str, Any]] = Field(
+                ..., description="List of PR recommendations to validate"
+            ),
+        ) -> dict[str, Any]:
+            """Validate a set of PR recommendations for completeness and atomicity."""
+            await ctx.info(f"Validating {len(recommendations)} PR recommendations")
+            try:
+                return await mcp.validator.validate_recommendations(recommendations)
+            except Exception as e:
+                await ctx.error(f"Failed to validate PR recommendations: {str(e)}")
+                return {"error": f"Failed to validate recommendations: {str(e)}"}
+        
+        logger.info("Tool registration completed successfully")
+        
+    except Exception as e:
+        logger.error(f"Failed to register tools: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
+
+
+async def run_stdio_server():
+    """Run the server in STDIO mode for direct MCP client connections."""
+    try:
+        logger.info("=== Starting PR Recommender (STDIO) ===")
+        logger.info(f"Python version: {sys.version}")
+        logger.info(f"Working directory: {sys.path[0] if sys.path else 'unknown'}")
+        
+        # Create server and services
+        logger.info("Creating server and services...")
+        mcp, services = create_server()
+
+        # Store services in the server context for tools to access
+        logger.info("Setting up server context...")
+        mcp.pr_generator = services['pr_generator']
+        mcp.feasibility_analyzer = services['feasibility_analyzer']
+        mcp.strategy_manager = services['strategy_manager']
+        mcp.validator = services['validator']
+        logger.info("Server context configured")
+
+        # Register tools
+        logger.info("Registering tools...")
+        register_tools(mcp)
+        logger.info("Tools registration completed")
+
+        # Run the server with enhanced error handling
+        try:
+            logger.info("Starting FastMCP server in stdio mode...")
+            logger.info("Server is ready to receive MCP messages")
+            # Use run_async instead of run for better async handling
+            await mcp.run_async(transport="stdio")
+        except (BrokenPipeError, EOFError) as e:
+            # Handle stdio stream closure gracefully
+            logger.info(f"Input stream closed ({type(e).__name__}), shutting down server gracefully")
+        except ConnectionResetError as e:
+            # Handle connection reset gracefully
+            logger.info(f"Connection reset ({e}), shutting down server gracefully")
+        except KeyboardInterrupt:
+            logger.info("Server stopped by user (KeyboardInterrupt)")
+        except Exception as e:
+            logger.error(f"Server runtime error: {e}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            sys.exit(1)
+
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user during initialization")
+    except Exception as e:
+        logger.error(f"Server initialization error: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        sys.exit(1)
+
+
+def run_http_server(host: str = "127.0.0.1", port: int = 9071, transport: str = "streamable-http"):
+    """Run the server in HTTP mode for MCP Gateway integration."""
+    logger.info(f"=== Starting PR Recommender (HTTP) ===")
+    logger.info(f"🌐 Transport: {transport}")
+    logger.info(f"🌐 Endpoint: http://{host}:{port}/mcp")
+    logger.info(f"🏥 Health: http://{host}:{port}/health")
+    
+    try:
+        # Create server and services
+        logger.info("Creating server and services...")
+        mcp, services = create_server()
+
+        # Store services in the server context for tools to access
+        logger.info("Setting up server context...")
+        mcp.pr_generator = services['pr_generator']
+        mcp.feasibility_analyzer = services['feasibility_analyzer']
+        mcp.strategy_manager = services['strategy_manager']
+        mcp.validator = services['validator']
+        logger.info("Server context configured")
+
+        # Register tools
+        logger.info("Registering tools...")
+        register_tools(mcp)
+        logger.info("Tools registration completed")
+
+        # Create HTTP app
+        app = mcp.http_app(path="/mcp", transport=transport)
+        
+        # Run with uvicorn
+        import uvicorn
+        logger.info("Starting HTTP server...")
+        uvicorn.run(app, host=host, port=port, log_level="info")
+        
+    except Exception as e:
+        logger.error(f"HTTP server error: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        sys.exit(1)
+
+
+def setup_logging(log_level: str = "INFO"):
+    """Configure logging level."""
+    # Your existing logging setup through logging_service should handle this
+    # Just ensure the level is properly set
+    import logging
+    level = getattr(logging, log_level.upper())
+    logging.getLogger().setLevel(level)
 
 
 def main():
-    """Main entry point."""
-    setup_logging()
-
+    """Main entry point with command line argument parsing."""
+    parser = argparse.ArgumentParser(description="MCP PR Recommender Server")
+    parser.add_argument(
+        "--transport", 
+        choices=["stdio", "streamable-http", "sse"], 
+        default="stdio",
+        help="Transport protocol to use"
+    )
+    parser.add_argument(
+        "--host", 
+        default="127.0.0.1",
+        help="Host to bind to (HTTP mode only)"
+    )
+    parser.add_argument(
+        "--port", 
+        type=int, 
+        default=9071,  # Different default port from local analyzer
+        help="Port to bind to (HTTP mode only)"
+    )
+    parser.add_argument(
+        "--log-level", 
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"], 
+        default="INFO",
+        help="Logging level"
+    )
+    
+    args = parser.parse_args()
+    
+    # Setup logging
+    setup_logging(args.log_level)
+    
     try:
-        mcp = create_server()
-
-        logging.info(f"Starting PR Recommender server on {settings.server_host}:{settings.server_port}")
-        mcp.run()
-
+        if args.transport == "stdio":
+            # Use asyncio.run to properly manage the event loop for STDIO
+            asyncio.run(run_stdio_server())
+        else:
+            # HTTP mode runs synchronously with uvicorn
+            run_http_server(host=args.host, port=args.port, transport=args.transport)
     except KeyboardInterrupt:
-        logging.info("Server stopped by user")
+        logger.info("Server stopped by user")
     except Exception as e:
-        logging.error(f"Server error: {e}")
+        logger.error(f"Server error: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
