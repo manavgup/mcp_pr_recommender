@@ -9,17 +9,16 @@ Main entry point for the PR recommender server with both STDIO and HTTP transpor
 Provides server setup, tool registration, and server execution.
 """
 
+import argparse
 import asyncio
 import sys
-import argparse
 import traceback
 from contextlib import asynccontextmanager
 
 from fastmcp import FastMCP
+from mcp_shared_lib.utils import logging_service
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-
-from mcp_shared_lib.utils import logging_service
 
 from mcp_pr_recommender.tools import (
     FeasibilityAnalyzerTool,
@@ -95,46 +94,50 @@ def create_server() -> tuple[FastMCP, dict]:
         # Add health check endpoints for HTTP mode
         @mcp.custom_route("/health", methods=["GET"])
         async def health_check(request: Request) -> JSONResponse:
-            return JSONResponse({
-                "status": "ok", 
-                "service": "PR Recommender",
-                "version": "1.0.0",
-                "initialized": _server_initialized
-            })
-        
-        @mcp.custom_route("/healthz", methods=["GET"]) 
+            return JSONResponse(
+                {
+                    "status": "ok",
+                    "service": "PR Recommender",
+                    "version": "1.0.0",
+                    "initialized": _server_initialized,
+                }
+            )
+
+        @mcp.custom_route("/healthz", methods=["GET"])
         async def health_check_z(request: Request) -> JSONResponse:
-            return JSONResponse({
-                "status": "ok", 
-                "service": "PR Recommender",
-                "version": "1.0.0",
-                "initialized": _server_initialized
-            })
+            return JSONResponse(
+                {
+                    "status": "ok",
+                    "service": "PR Recommender",
+                    "version": "1.0.0",
+                    "initialized": _server_initialized,
+                }
+            )
 
         # Initialize services with error handling
         logger.info("Initializing services...")
-        
+
         try:
             pr_generator = PRRecommenderTool()
             logger.info("PRRecommenderTool initialized")
         except Exception as e:
             logger.error(f"Failed to initialize PRRecommenderTool: {e}")
             raise
-            
+
         try:
             feasibility_analyzer = FeasibilityAnalyzerTool()
             logger.info("FeasibilityAnalyzerTool initialized")
         except Exception as e:
             logger.error(f"Failed to initialize FeasibilityAnalyzerTool: {e}")
             raise
-            
+
         try:
             strategy_manager = StrategyManagerTool()
             logger.info("StrategyManagerTool initialized")
         except Exception as e:
             logger.error(f"Failed to initialize StrategyManagerTool: {e}")
             raise
-            
+
         try:
             validator = ValidatorTool()
             logger.info("ValidatorTool initialized")
@@ -144,15 +147,15 @@ def create_server() -> tuple[FastMCP, dict]:
 
         # Create services dict for dependency injection
         services = {
-            'pr_generator': pr_generator,
-            'feasibility_analyzer': feasibility_analyzer,
-            'strategy_manager': strategy_manager,
-            'validator': validator,
+            "pr_generator": pr_generator,
+            "feasibility_analyzer": feasibility_analyzer,
+            "strategy_manager": strategy_manager,
+            "validator": validator,
         }
-        
+
         logger.info("All services initialized successfully")
         return mcp, services
-        
+
     except Exception as e:
         logger.error(f"Failed to create server: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
@@ -167,8 +170,9 @@ def register_tools(mcp: FastMCP):
     """
     try:
         logger.info("Starting tool registration")
-        
+
         from typing import Any
+
         from fastmcp import Context
         from pydantic import Field
 
@@ -181,7 +185,9 @@ def register_tools(mcp: FastMCP):
             strategy: str = Field(
                 default="semantic", description="Grouping strategy to use"
             ),
-            max_files_per_pr: int = Field(default=8, description="Maximum files per PR"),
+            max_files_per_pr: int = Field(
+                default=8, description="Maximum files per PR"
+            ),
         ) -> dict[str, Any]:
             """Generate PR recommendations from git analysis data."""
             await ctx.info(f"Generating PR recommendations using {strategy} strategy")
@@ -203,7 +209,9 @@ def register_tools(mcp: FastMCP):
             """Analyze the feasibility and risks of a specific PR recommendation."""
             await ctx.info("Analyzing PR feasibility")
             try:
-                return await mcp.feasibility_analyzer.analyze_feasibility(pr_recommendation)
+                return await mcp.feasibility_analyzer.analyze_feasibility(
+                    pr_recommendation
+                )
             except Exception as e:
                 await ctx.error(f"Failed to analyze PR feasibility: {str(e)}")
                 return {"error": f"Failed to analyze feasibility: {str(e)}"}
@@ -234,9 +242,9 @@ def register_tools(mcp: FastMCP):
             except Exception as e:
                 await ctx.error(f"Failed to validate PR recommendations: {str(e)}")
                 return {"error": f"Failed to validate recommendations: {str(e)}"}
-        
+
         logger.info("Tool registration completed successfully")
-        
+
     except Exception as e:
         logger.error(f"Failed to register tools: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
@@ -249,17 +257,17 @@ async def run_stdio_server():
         logger.info("=== Starting PR Recommender (STDIO) ===")
         logger.info(f"Python version: {sys.version}")
         logger.info(f"Working directory: {sys.path[0] if sys.path else 'unknown'}")
-        
+
         # Create server and services
         logger.info("Creating server and services...")
         mcp, services = create_server()
 
         # Store services in the server context for tools to access
         logger.info("Setting up server context...")
-        mcp.pr_generator = services['pr_generator']
-        mcp.feasibility_analyzer = services['feasibility_analyzer']
-        mcp.strategy_manager = services['strategy_manager']
-        mcp.validator = services['validator']
+        mcp.pr_generator = services["pr_generator"]
+        mcp.feasibility_analyzer = services["feasibility_analyzer"]
+        mcp.strategy_manager = services["strategy_manager"]
+        mcp.validator = services["validator"]
         logger.info("Server context configured")
 
         # Register tools
@@ -275,7 +283,9 @@ async def run_stdio_server():
             await mcp.run_async(transport="stdio")
         except (BrokenPipeError, EOFError) as e:
             # Handle stdio stream closure gracefully
-            logger.info(f"Input stream closed ({type(e).__name__}), shutting down server gracefully")
+            logger.info(
+                f"Input stream closed ({type(e).__name__}), shutting down server gracefully"
+            )
         except ConnectionResetError as e:
             # Handle connection reset gracefully
             logger.info(f"Connection reset ({e}), shutting down server gracefully")
@@ -294,13 +304,15 @@ async def run_stdio_server():
         sys.exit(1)
 
 
-def run_http_server(host: str = "127.0.0.1", port: int = 9071, transport: str = "streamable-http"):
+def run_http_server(
+    host: str = "127.0.0.1", port: int = 9071, transport: str = "streamable-http"
+):
     """Run the server in HTTP mode for MCP Gateway integration."""
-    logger.info(f"=== Starting PR Recommender (HTTP) ===")
+    logger.info("=== Starting PR Recommender (HTTP) ===")
     logger.info(f"🌐 Transport: {transport}")
     logger.info(f"🌐 Endpoint: http://{host}:{port}/mcp")
     logger.info(f"🏥 Health: http://{host}:{port}/health")
-    
+
     try:
         # Create server and services
         logger.info("Creating server and services...")
@@ -308,10 +320,10 @@ def run_http_server(host: str = "127.0.0.1", port: int = 9071, transport: str = 
 
         # Store services in the server context for tools to access
         logger.info("Setting up server context...")
-        mcp.pr_generator = services['pr_generator']
-        mcp.feasibility_analyzer = services['feasibility_analyzer']
-        mcp.strategy_manager = services['strategy_manager']
-        mcp.validator = services['validator']
+        mcp.pr_generator = services["pr_generator"]
+        mcp.feasibility_analyzer = services["feasibility_analyzer"]
+        mcp.strategy_manager = services["strategy_manager"]
+        mcp.validator = services["validator"]
         logger.info("Server context configured")
 
         # Register tools
@@ -321,12 +333,13 @@ def run_http_server(host: str = "127.0.0.1", port: int = 9071, transport: str = 
 
         # Create HTTP app
         app = mcp.http_app(path="/mcp", transport=transport)
-        
+
         # Run with uvicorn
         import uvicorn
+
         logger.info("Starting HTTP server...")
         uvicorn.run(app, host=host, port=port, log_level="info")
-        
+
     except Exception as e:
         logger.error(f"HTTP server error: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
@@ -338,6 +351,7 @@ def setup_logging(log_level: str = "INFO"):
     # Your existing logging setup through logging_service should handle this
     # Just ensure the level is properly set
     import logging
+
     level = getattr(logging, log_level.upper())
     logging.getLogger().setLevel(level)
 
@@ -346,34 +360,32 @@ def main():
     """Main entry point with command line argument parsing."""
     parser = argparse.ArgumentParser(description="MCP PR Recommender Server")
     parser.add_argument(
-        "--transport", 
-        choices=["stdio", "streamable-http", "sse"], 
+        "--transport",
+        choices=["stdio", "streamable-http", "sse"],
         default="stdio",
-        help="Transport protocol to use"
+        help="Transport protocol to use",
     )
     parser.add_argument(
-        "--host", 
-        default="127.0.0.1",
-        help="Host to bind to (HTTP mode only)"
+        "--host", default="127.0.0.1", help="Host to bind to (HTTP mode only)"
     )
     parser.add_argument(
-        "--port", 
-        type=int, 
+        "--port",
+        type=int,
         default=9071,  # Different default port from local analyzer
-        help="Port to bind to (HTTP mode only)"
+        help="Port to bind to (HTTP mode only)",
     )
     parser.add_argument(
-        "--log-level", 
-        choices=["DEBUG", "INFO", "WARNING", "ERROR"], 
+        "--log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         default="INFO",
-        help="Logging level"
+        help="Logging level",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Setup logging
     setup_logging(args.log_level)
-    
+
     try:
         if args.transport == "stdio":
             # Use asyncio.run to properly manage the event loop for STDIO

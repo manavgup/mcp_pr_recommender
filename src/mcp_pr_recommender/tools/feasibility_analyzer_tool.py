@@ -45,7 +45,9 @@ class FeasibilityAnalyzerTool:
             # Check file count
             if len(files) > settings.max_files_per_pr:
                 analysis["risk_factors"].append(f"Large number of files ({len(files)})")
-                analysis["recommendations"].append("Consider splitting into smaller PRs")
+                analysis["recommendations"].append(
+                    "Consider splitting into smaller PRs"
+                )
 
             # Check for mixed concerns
             file_analysis = self._categorize_files(files)
@@ -62,7 +64,9 @@ class FeasibilityAnalyzerTool:
             if len(analysis["risk_factors"]) > 2:
                 analysis["feasible"] = False
 
-            self.logger.info(f"Feasibility analysis complete: {'feasible' if analysis['feasible'] else 'needs review'}")
+            self.logger.info(
+                f"Feasibility analysis complete: {'feasible' if analysis['feasible'] else 'needs review'}"
+            )
 
             return analysis
 
@@ -115,10 +119,16 @@ class FeasibilityAnalyzerTool:
             "estimated_review_time_per_file": 10,  # minutes
             "complexity_factors": [
                 "File count" if len(files) > 5 else None,
-                "Multiple directories" if len({Path(f).parent for f in files}) > 2 else None,
-                "Mixed file types" if len({Path(f).suffix for f in files}) > 3 else None,
+                "Multiple directories"
+                if len({Path(f).parent for f in files}) > 2
+                else None,
+                "Mixed file types"
+                if len({Path(f).suffix for f in files}) > 3
+                else None,
             ],
-            "complexity_score": min(10, len(files) + len({Path(f).parent for f in files})),
+            "complexity_score": min(
+                10, len(files) + len({Path(f).parent for f in files})
+            ),
         }
 
     def _analyze_dependencies(self, files: list[str]) -> dict[str, Any]:
@@ -151,7 +161,11 @@ class FeasibilityAnalyzerTool:
         # Check for critical file patterns
         critical_patterns = ["migration", "schema", "config", "env", "docker", "deploy"]
 
-        critical_files = [f for f in files if any(pattern in f.lower() for pattern in critical_patterns)]
+        critical_files = [
+            f
+            for f in files
+            if any(pattern in f.lower() for pattern in critical_patterns)
+        ]
 
         if critical_files:
             risk_factors.append(f"Critical files present: {len(critical_files)}")
@@ -165,9 +179,14 @@ class FeasibilityAnalyzerTool:
             risk_factors.append("Files that might contain large changes")
             recommendations.append("Verify file sizes are reasonable")
 
-        return {"factors": [f for f in risk_factors if f], "recommendations": [r for r in recommendations if r]}
+        return {
+            "factors": [f for f in risk_factors if f],
+            "recommendations": [r for r in recommendations if r],
+        }
 
-    def _generate_review_checklist(self, pr_recommendation: dict[str, Any]) -> list[str]:
+    def _generate_review_checklist(
+        self, pr_recommendation: dict[str, Any]
+    ) -> list[str]:
         """Generate a review checklist based on the PR."""
 
         checklist = [

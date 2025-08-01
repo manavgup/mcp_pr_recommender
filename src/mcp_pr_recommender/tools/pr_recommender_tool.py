@@ -2,7 +2,12 @@
 import logging
 from typing import Any
 
-from mcp_shared_lib.models import ChangeCategorization, FileStatus, OutstandingChangesAnalysis, RiskAssessment
+from mcp_shared_lib.models import (
+    ChangeCategorization,
+    FileStatus,
+    OutstandingChangesAnalysis,
+    RiskAssessment,
+)
 
 from mcp_pr_recommender.services.semantic_analyzer import SemanticAnalyzer
 
@@ -30,7 +35,9 @@ class PRRecommenderTool:
         Returns:
             Dict containing PR recommendations and metadata
         """
-        self.logger.info(f"Generating PR recommendations using LLM-based semantic analysis")
+        self.logger.info(
+            "Generating PR recommendations using LLM-based semantic analysis"
+        )
 
         try:
             # ENHANCED: Extract all file types properly from analysis_data
@@ -51,7 +58,9 @@ class PRRecommenderTool:
                     total_lines_changed += f.total_changes
 
             self.logger.info(f"File breakdown: {file_type_counts}")
-            self.logger.info(f"Files with actual changes: {files_with_changes}/{len(all_files)}")
+            self.logger.info(
+                f"Files with actual changes: {files_with_changes}/{len(all_files)}"
+            )
             self.logger.info(f"Total lines changed: {total_lines_changed:,}")
 
             if not all_files:
@@ -63,17 +72,27 @@ class PRRecommenderTool:
                 }
 
             # Create OutstandingChangesAnalysis object with proper data
-            analysis: OutstandingChangesAnalysis = self._create_analysis_object(analysis_data, all_files)
+            analysis: OutstandingChangesAnalysis = self._create_analysis_object(
+                analysis_data, all_files
+            )
 
             # Generate recommendations using semantic analyzer directly
-            pr_recommendations = await self.semantic_analyzer.analyze_and_generate_prs(all_files, analysis)
+            pr_recommendations = await self.semantic_analyzer.analyze_and_generate_prs(
+                all_files, analysis
+            )
 
             self.logger.info(f"Generated {len(pr_recommendations)} PR recommendations")
 
             # Calculate summary statistics
             total_files_in_prs = sum(pr.files_count for pr in pr_recommendations)
-            average_pr_size = total_files_in_prs / len(pr_recommendations) if pr_recommendations else 0
-            total_changes_in_prs = sum(pr.total_lines_changed for pr in pr_recommendations)
+            average_pr_size = (
+                total_files_in_prs / len(pr_recommendations)
+                if pr_recommendations
+                else 0
+            )
+            total_changes_in_prs = sum(
+                pr.total_lines_changed for pr in pr_recommendations
+            )
 
             # Enhanced validation - check if untracked files are included
             untracked_files = [f for f in all_files if f.change_type == "untracked"]
@@ -88,7 +107,9 @@ class PRRecommenderTool:
                             untracked_in_prs += 1
                             break
 
-            self.logger.info(f"Untracked files: {untracked_count} total, {untracked_in_prs} included in PRs")
+            self.logger.info(
+                f"Untracked files: {untracked_count} total, {untracked_in_prs} included in PRs"
+            )
 
             # Format response
             return {
@@ -170,7 +191,9 @@ class PRRecommenderTool:
 
         # Fallback: Use comprehensive analysis if available (from enhanced test)
         elif "all_files" in analysis_data:
-            self.logger.info(f"Using comprehensive file analysis with {len(analysis_data['all_files'])} files")
+            self.logger.info(
+                f"Using comprehensive file analysis with {len(analysis_data['all_files'])} files"
+            )
             for file_data in analysis_data["all_files"]:
                 file_status = self._create_file_status(file_data)
                 all_files.append(file_status)

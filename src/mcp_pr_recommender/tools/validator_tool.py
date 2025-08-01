@@ -50,16 +50,24 @@ class ValidatorTool:
                     file_to_pr_map[file_path].append(rec.get("id", f"rec_{i}"))
 
             # Coverage analysis
-            validation_results["coverage_analysis"] = self._analyze_coverage(recommendations, all_files, file_to_pr_map)
+            validation_results["coverage_analysis"] = self._analyze_coverage(
+                recommendations, all_files, file_to_pr_map
+            )
 
             # Conflict analysis
-            validation_results["conflict_analysis"] = self._analyze_conflicts(file_to_pr_map)
+            validation_results["conflict_analysis"] = self._analyze_conflicts(
+                file_to_pr_map
+            )
 
             # Generate overall suggestions
-            validation_results["suggestions"] = self._generate_suggestions(validation_results)
+            validation_results["suggestions"] = self._generate_suggestions(
+                validation_results
+            )
 
             # Calculate quality score
-            validation_results["quality_score"] = self._calculate_quality_score(validation_results)
+            validation_results["quality_score"] = self._calculate_quality_score(
+                validation_results
+            )
 
             self.logger.info(
                 f"Validation complete: {'VALID' if validation_results['overall_valid'] else 'ISSUES FOUND'} "
@@ -72,7 +80,9 @@ class ValidatorTool:
             self.logger.error(f"Validation failed: {str(e)}")
             return {"error": f"Validation failed: {str(e)}"}
 
-    async def _validate_single_recommendation(self, rec: dict[str, Any], index: int) -> dict[str, Any]:
+    async def _validate_single_recommendation(
+        self, rec: dict[str, Any], index: int
+    ) -> dict[str, Any]:
         """Validate a single PR recommendation."""
 
         rec_analysis = {
@@ -94,7 +104,9 @@ class ValidatorTool:
         # Check file count limits
         if len(files) > settings.max_files_per_pr:
             rec_analysis["valid"] = False
-            rec_analysis["issues"].append(f"Too many files ({len(files)} > {settings.max_files_per_pr})")
+            rec_analysis["issues"].append(
+                f"Too many files ({len(files)} > {settings.max_files_per_pr})"
+            )
             rec_analysis["suggestions"].append("Split into smaller PRs")
 
         if len(files) < settings.min_files_per_pr and len(files) > 0:
@@ -110,12 +122,16 @@ class ValidatorTool:
         # Check risk level vs size
         risk_level = rec.get("risk_level", "low")
         if risk_level == "high" and len(files) > 5:
-            rec_analysis["warnings"].append("High-risk PR with many files - consider extra review")
+            rec_analysis["warnings"].append(
+                "High-risk PR with many files - consider extra review"
+            )
 
         # Check estimated review time
         review_time = rec.get("estimated_review_time", 0)
         if review_time > 120:  # 2 hours
-            rec_analysis["warnings"].append("Long estimated review time - consider splitting")
+            rec_analysis["warnings"].append(
+                "Long estimated review time - consider splitting"
+            )
 
         # Analyze file coherence
         coherence_analysis = self._analyze_file_coherence(files)
@@ -134,20 +150,35 @@ class ValidatorTool:
         return rec_analysis
 
     def _analyze_coverage(
-        self, recommendations: list[dict[str, Any]], all_files: set, file_to_pr_map: dict
+        self,
+        recommendations: list[dict[str, Any]],
+        all_files: set,
+        file_to_pr_map: dict,
     ) -> dict[str, Any]:
         """Analyze file coverage across recommendations."""
 
         return {
             "total_files_covered": len(all_files),
             "total_recommendations": len(recommendations),
-            "average_files_per_pr": len(all_files) / len(recommendations) if recommendations else 0,
+            "average_files_per_pr": len(all_files) / len(recommendations)
+            if recommendations
+            else 0,
             "file_distribution": {
-                "small_prs": len([r for r in recommendations if len(r.get("files", [])) <= 3]),
-                "medium_prs": len([r for r in recommendations if 4 <= len(r.get("files", [])) <= 8]),
-                "large_prs": len([r for r in recommendations if len(r.get("files", [])) > 8]),
+                "small_prs": len(
+                    [r for r in recommendations if len(r.get("files", [])) <= 3]
+                ),
+                "medium_prs": len(
+                    [r for r in recommendations if 4 <= len(r.get("files", [])) <= 8]
+                ),
+                "large_prs": len(
+                    [r for r in recommendations if len(r.get("files", [])) > 8]
+                ),
             },
-            "duplicate_files": [{"file": file, "prs": prs} for file, prs in file_to_pr_map.items() if len(prs) > 1],
+            "duplicate_files": [
+                {"file": file, "prs": prs}
+                for file, prs in file_to_pr_map.items()
+                if len(prs) > 1
+            ],
         }
 
     def _analyze_conflicts(self, file_to_pr_map: dict) -> dict[str, Any]:
@@ -157,7 +188,11 @@ class ValidatorTool:
         for file_path, pr_ids in file_to_pr_map.items():
             if len(pr_ids) > 1:
                 conflicts.append(
-                    {"file": file_path, "conflicting_prs": pr_ids, "severity": "high" if len(pr_ids) > 2 else "medium"}
+                    {
+                        "file": file_path,
+                        "conflicting_prs": pr_ids,
+                        "severity": "high" if len(pr_ids) > 2 else "medium",
+                    }
                 )
 
         return {
@@ -186,12 +221,22 @@ class ValidatorTool:
         extensions = {Path(f).suffix for f in files}
 
         # Score based on directory and file type similarity
-        dir_score = 1.0 if len(directories) == 1 else max(0.3, 1.0 - (len(directories) - 1) * 0.2)
-        ext_score = 1.0 if len(extensions) <= 2 else max(0.3, 1.0 - (len(extensions) - 2) * 0.15)
+        dir_score = (
+            1.0
+            if len(directories) == 1
+            else max(0.3, 1.0 - (len(directories) - 1) * 0.2)
+        )
+        ext_score = (
+            1.0
+            if len(extensions) <= 2
+            else max(0.3, 1.0 - (len(extensions) - 2) * 0.15)
+        )
 
         # Check for common patterns
         pattern_score = 1.0
-        if any("test" in f.lower() for f in files) and any("test" not in f.lower() for f in files):
+        if any("test" in f.lower() for f in files) and any(
+            "test" not in f.lower() for f in files
+        ):
             pattern_score *= 0.8  # Mixed test and non-test files
 
         coherence_score = (dir_score + ext_score + pattern_score) / 3
@@ -226,15 +271,24 @@ class ValidatorTool:
         # Conflict suggestions
         conflicts = validation_results["conflict_analysis"]
         if conflicts["has_conflicts"]:
-            suggestions.append(f"Resolve {conflicts['conflict_count']} file conflicts between PRs")
+            suggestions.append(
+                f"Resolve {conflicts['conflict_count']} file conflicts between PRs"
+            )
 
         # Distribution suggestions
         distribution = coverage["file_distribution"]
-        if distribution["large_prs"] > distribution["small_prs"] + distribution["medium_prs"]:
+        if (
+            distribution["large_prs"]
+            > distribution["small_prs"] + distribution["medium_prs"]
+        ):
             suggestions.append("Too many large PRs - consider splitting them")
 
         # Quality suggestions
-        invalid_count = sum(1 for rec in validation_results["recommendations_analysis"] if not rec["valid"])
+        invalid_count = sum(
+            1
+            for rec in validation_results["recommendations_analysis"]
+            if not rec["valid"]
+        )
         if invalid_count > 0:
             suggestions.append(f"Fix {invalid_count} invalid PR recommendations")
 
@@ -250,7 +304,11 @@ class ValidatorTool:
         score = 10.0
 
         # Deduct for invalid recommendations
-        invalid_count = sum(1 for rec in validation_results["recommendations_analysis"] if not rec["valid"])
+        invalid_count = sum(
+            1
+            for rec in validation_results["recommendations_analysis"]
+            if not rec["valid"]
+        )
         score -= invalid_count * 2
 
         # Deduct for conflicts
@@ -263,7 +321,10 @@ class ValidatorTool:
             score -= 1
 
         # Deduct for warnings
-        warning_count = sum(len(rec["warnings"]) for rec in validation_results["recommendations_analysis"])
+        warning_count = sum(
+            len(rec["warnings"])
+            for rec in validation_results["recommendations_analysis"]
+        )
         score -= warning_count * 0.2
 
         return max(0.0, min(10.0, score))

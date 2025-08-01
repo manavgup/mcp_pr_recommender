@@ -28,22 +28,37 @@ class StrategyManagerTool:
                     "Can identify non-obvious connections",
                     "Considers business logic context",
                 ],
-                "cons": ["Requires OpenAI API key", "Slower due to LLM calls", "May have API costs"],
+                "cons": [
+                    "Requires OpenAI API key",
+                    "Slower due to LLM calls",
+                    "May have API costs",
+                ],
             },
             "directory": {
                 "name": "Directory-based",
                 "description": "Groups files by directory structure and file types",
                 "best_for": "Well-organized codebases with clear module boundaries",
                 "requires_llm": False,
-                "pros": ["Fast and deterministic", "No external dependencies", "Respects code organization"],
-                "cons": ["May miss cross-directory relationships", "Relies on good directory structure"],
+                "pros": [
+                    "Fast and deterministic",
+                    "No external dependencies",
+                    "Respects code organization",
+                ],
+                "cons": [
+                    "May miss cross-directory relationships",
+                    "Relies on good directory structure",
+                ],
             },
             "size": {
                 "name": "Size-based",
                 "description": "Groups files to maintain optimal PR size for review",
                 "best_for": "Large changesets that need to be broken down",
                 "requires_llm": False,
-                "pros": ["Ensures reviewable PR sizes", "Simple and predictable", "Good for bulk changes"],
+                "pros": [
+                    "Ensures reviewable PR sizes",
+                    "Simple and predictable",
+                    "Good for bulk changes",
+                ],
                 "cons": ["May split related changes", "Ignores logical relationships"],
             },
             "dependency": {
@@ -51,15 +66,27 @@ class StrategyManagerTool:
                 "description": "Groups files based on code dependencies and imports",
                 "best_for": "Refactoring and structural changes",
                 "requires_llm": False,
-                "pros": ["Respects code dependencies", "Good for refactoring", "Prevents breaking changes"],
-                "cons": ["Requires code analysis", "May create large groups", "Complex to implement fully"],
+                "pros": [
+                    "Respects code dependencies",
+                    "Good for refactoring",
+                    "Prevents breaking changes",
+                ],
+                "cons": [
+                    "Requires code analysis",
+                    "May create large groups",
+                    "Complex to implement fully",
+                ],
             },
             "hybrid": {
                 "name": "Hybrid Approach",
                 "description": "Combines multiple strategies for optimal results",
                 "best_for": "Most use cases - balances speed and intelligence",
                 "requires_llm": True,
-                "pros": ["Best of all approaches", "Adapts to different change types", "Fallback strategies"],
+                "pros": [
+                    "Best of all approaches",
+                    "Adapts to different change types",
+                    "Fallback strategies",
+                ],
                 "cons": ["More complex", "May require tuning"],
             },
         }
