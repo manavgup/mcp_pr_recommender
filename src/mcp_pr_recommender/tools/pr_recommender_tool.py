@@ -63,7 +63,7 @@ class PRRecommenderTool:
                 }
 
             # Create OutstandingChangesAnalysis object with proper data
-            analysis = self._create_analysis_object(analysis_data, all_files)
+            analysis: OutstandingChangesAnalysis = self._create_analysis_object(analysis_data, all_files)
 
             # Generate recommendations using semantic analyzer directly
             pr_recommendations = await self.semantic_analyzer.analyze_and_generate_prs(all_files, analysis)
@@ -152,18 +152,33 @@ class PRRecommenderTool:
         """Extract all files from analysis_data, handling different formats."""
         all_files = []
 
-        # Method 1: Use comprehensive analysis if available (from enhanced test)
-        if "all_files" in analysis_data:
+        # Handle new standardized format with repository_status
+        if "repository_status" in analysis_data:
+            repo_status = analysis_data["repository_status"]
+            working_dir = repo_status.get("working_directory", {})
+
+            for file_type in [
+                "modified_files",
+                "added_files",
+                "deleted_files",
+                "renamed_files",
+                "untracked_files",
+            ]:
+                for file_data in working_dir.get(file_type, []):
+                    file_status = self._create_file_status(file_data)
+                    all_files.append(file_status)
+
+        # Fallback: Use comprehensive analysis if available (from enhanced test)
+        elif "all_files" in analysis_data:
             self.logger.info(f"Using comprehensive file analysis with {len(analysis_data['all_files'])} files")
             for file_data in analysis_data["all_files"]:
                 file_status = self._create_file_status(file_data)
                 all_files.append(file_status)
 
-        # Method 2: Fallback - combine individual file arrays
+        # Fallback: combine individual file arrays (legacy)
         else:
             self.logger.info("Using individual file arrays - combining all types")
 
-            # Process all file types the same way
             file_arrays = [
                 ("working_directory_files", "tracked changes"),
                 ("staged_files", "staged files"),
