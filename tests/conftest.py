@@ -15,10 +15,7 @@ import pytest
 # mcp_shared_lib.test_utils.factories is importable. This is a short-term workaround.
 # Best practice is to move shared test utilities into a real subpackage under src/ (e.g., mcp_shared_lib.test_utils)
 # and import from there. Refactor this when possible.
-from mcp_shared_lib.test_utils.factories import (
-    FileChangeFactory,
-    create_file_changes,
-)
+from mcp_shared_lib.test_utils.factories import FileChangeFactory, create_file_changes
 
 
 @pytest.fixture

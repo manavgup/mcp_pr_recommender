@@ -421,7 +421,7 @@ class GroupingEngine:
                 return f"{prefix} update {group.category} files ({file_count} files)"
 
     def _generate_smart_description(
-        self, group: ChangeGroup, analysis: OutstandingChangesAnalysis
+        self, group: ChangeGroup, _analysis: OutstandingChangesAnalysis
     ) -> str:
         """Generate smart descriptions with real statistics."""
 

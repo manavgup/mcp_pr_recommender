@@ -23,7 +23,7 @@ class PRRecommenderTool:
         self,
         analysis_data: dict[str, Any],
         strategy: str = "semantic",
-        max_files_per_pr: int = 8,
+        _max_files_per_pr: int = 8,
     ) -> dict[str, Any]:
         """Generate PR recommendations from git analysis data.
 

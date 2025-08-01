@@ -384,7 +384,7 @@ Please group these files into the optimal number of logical, atomic Pull Request
         return groups
 
     def _generate_pr_recommendations(
-        self, groups: list[ChangeGroup], analysis: OutstandingChangesAnalysis
+        self, groups: list[ChangeGroup], _analysis: OutstandingChangesAnalysis
     ) -> list[PRRecommendation]:
         """Generate PR recommendations from groups."""
 
