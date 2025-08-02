@@ -1,12 +1,9 @@
-import pytest
-
 #!/usr/bin/env python3
 """
 Enhanced test client for the MCP PR Recommender FastMCP server.
 Tests full integration with mcp_local_repo_analyzer for the "messy developer" scenario.
 Now includes proper untracked file handling.
 """
-
 import asyncio
 import json
 import os
@@ -15,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import pytest
 from fastmcp import Client
 
 # Mock data similar to what mcp_local_repo_analyzer would provide

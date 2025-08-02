@@ -404,7 +404,7 @@ Please group these files into the optimal number of logical, atomic Pull Request
             priority = self._determine_priority(
                 group, total_changes, files_with_changes
             )
-            risk_level = self._determine_risk(group, total_changes, files_count)
+            risk_level = self._determine_risk(total_changes, files_count)
 
             # Estimate review time
             review_time = self._estimate_review_time(files_count, total_changes)
@@ -549,7 +549,7 @@ Please group these files into the optimal number of logical, atomic Pull Request
             return "low"
 
     def _determine_risk(
-        self, group: ChangeGroup, total_changes: int, files_count: int
+        self, total_changes: int, files_count: int
     ) -> str:
         """FIXED: Determine risk level with proper handling for cleanup PRs."""
 

@@ -208,7 +208,7 @@ class PRRecommenderTool:
                 ("untracked_files", "untracked files"),
             ]
 
-            for array_key, description in file_arrays:
+            for array_key, _description in file_arrays:
                 for file_data in analysis_data.get(array_key, []):
                     file_status = self._create_file_status(file_data)
                     all_files.append(file_status)

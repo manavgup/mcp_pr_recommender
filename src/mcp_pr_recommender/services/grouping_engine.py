@@ -527,8 +527,8 @@ class GroupingEngine:
         # High risk: lots of changes OR core files OR config changes
         if total_lines > 1000:
             return "high"
-        elif group.category in ["feature", "config"] and total_lines > 200:
-            return "medium"
+        if group.category == "feature" or (group.category in ["config", "test"] and total_lines > 200):
+            return "high" if group.category == "feature" else "medium"
         elif files_count > 15:
             return "medium"
         else:
