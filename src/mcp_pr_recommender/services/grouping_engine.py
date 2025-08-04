@@ -22,14 +22,10 @@ class GroupingEngine:
         self.atomicity_validator = AtomicityValidator()
         self.logger = logging.getLogger(__name__)
 
-    async def generate_pr_recommendations(
-        self, analysis: OutstandingChangesAnalysis, strategy_name: str = "semantic"
-    ) -> PRStrategy:
+    async def generate_pr_recommendations(self, analysis: OutstandingChangesAnalysis, strategy_name: str = "semantic") -> PRStrategy:
         """Generate PR recommendations from git analysis."""
 
-        self.logger.info(
-            f"Generating PR recommendations using {strategy_name} strategy"
-        )
+        self.logger.info(f"Generating PR recommendations using {strategy_name} strategy")
         self.logger.info(f"Input: {len(analysis.all_changed_files)} files to analyze")
 
         # Step 1: Simple logical grouping
@@ -37,14 +33,8 @@ class GroupingEngine:
         self.logger.info(f"Initial grouping: {len(initial_groups)} groups")
 
         # Step 2: Skip semantic analysis if groups are already good
-        if (
-            len(initial_groups) <= 5
-            and settings.enable_llm_analysis
-            and strategy_name == "semantic"
-        ):
-            refined_groups = await self.semantic_analyzer.refine_groups(
-                initial_groups, analysis
-            )
+        if len(initial_groups) <= 5 and settings.enable_llm_analysis and strategy_name == "semantic":
+            refined_groups = await self.semantic_analyzer.refine_groups(initial_groups, analysis)
             self.logger.info(f"Semantic refinement: {len(refined_groups)} groups")
         else:
             refined_groups = initial_groups
@@ -82,9 +72,7 @@ class GroupingEngine:
         excluded_count = len(files) - len(clean_files)
 
         if excluded_count > 0:
-            self.logger.info(
-                f"Excluded {excluded_count} cache/history files from PR grouping"
-            )
+            self.logger.info(f"Excluded {excluded_count} cache/history files from PR grouping")
 
         if not clean_files:
             self.logger.warning("No files left after filtering")
@@ -107,11 +95,7 @@ class GroupingEngine:
             )
 
         # Group 2: Project configuration (second priority)
-        config_files = [
-            f
-            for f in clean_files
-            if self._is_project_config(f.path) and f not in source_files
-        ]
+        config_files = [f for f in clean_files if self._is_project_config(f.path) and f not in source_files]
         if config_files:
             groups.append(
                 ChangeGroup(
@@ -125,11 +109,7 @@ class GroupingEngine:
             )
 
         # Group 3: Tests (third priority)
-        test_files = [
-            f
-            for f in clean_files
-            if self._is_test_file(f.path) and f not in source_files + config_files
-        ]
+        test_files = [f for f in clean_files if self._is_test_file(f.path) and f not in source_files + config_files]
         if test_files:
             groups.append(
                 ChangeGroup(
@@ -143,12 +123,7 @@ class GroupingEngine:
             )
 
         # Group 4: Documentation
-        doc_files = [
-            f
-            for f in clean_files
-            if self._is_documentation(f.path)
-            and f not in source_files + config_files + test_files
-        ]
+        doc_files = [f for f in clean_files if self._is_documentation(f.path) and f not in source_files + config_files + test_files]
         if doc_files:
             groups.append(
                 ChangeGroup(
@@ -176,9 +151,7 @@ class GroupingEngine:
                 )
             )
 
-        self.logger.info(
-            f"Created {len(groups)} logical groups: {[g.id for g in groups]}"
-        )
+        self.logger.info(f"Created {len(groups)} logical groups: {[g.id for g in groups]}")
 
         # If we still have too many files in one group, split it
         final_groups = []
@@ -262,11 +235,7 @@ class GroupingEngine:
         # Config extensions
         config_extensions = [".toml", ".ini", ".env", ".config"]
 
-        return (
-            filename in config_filenames
-            or any(path.endswith(ext) for ext in config_extensions)
-            or filename.startswith(".env")
-        )
+        return filename in config_filenames or any(path.endswith(ext) for ext in config_extensions) or filename.startswith(".env")
 
     def _is_test_file(self, path: str) -> bool:
         """Is this a test file?"""
@@ -278,9 +247,7 @@ class GroupingEngine:
         # Must be code file and have test pattern
         code_extensions = [".py", ".js", ".ts", ".jsx", ".tsx", ".java", ".go", ".rs"]
 
-        return any(path.endswith(ext) for ext in code_extensions) and any(
-            pattern in path_lower for pattern in test_patterns
-        )
+        return any(path.endswith(ext) for ext in code_extensions) and any(pattern in path_lower for pattern in test_patterns)
 
     def _is_documentation(self, path: str) -> bool:
         """Is this a documentation file?"""
@@ -292,9 +259,7 @@ class GroupingEngine:
         # Documentation directories
         doc_dirs = ["docs/", "doc/", "documentation/"]
 
-        return any(path.endswith(ext) for ext in doc_extensions) or any(
-            doc_dir in path_lower for doc_dir in doc_dirs
-        )
+        return any(path.endswith(ext) for ext in doc_extensions) or any(doc_dir in path_lower for doc_dir in doc_dirs)
 
     def _split_large_group_simple(self, group: ChangeGroup) -> list[ChangeGroup]:
         """Split a large group by directory."""
@@ -324,9 +289,7 @@ class GroupingEngine:
                 )
             )
 
-        self.logger.info(
-            f"Split large group {group.id} into {len(split_groups)} directory-based groups"
-        )
+        self.logger.info(f"Split large group {group.id} into {len(split_groups)} directory-based groups")
         return split_groups
 
     def _validate_groups(self, groups: list[ChangeGroup]) -> list[ChangeGroup]:
@@ -336,9 +299,7 @@ class GroupingEngine:
         for group in groups:
             # Only split if group is unreasonably large (>20 files)
             if len(group.files) > 20:
-                self.logger.warning(
-                    f"Group {group.id} has {len(group.files)} files - splitting"
-                )
+                self.logger.warning(f"Group {group.id} has {len(group.files)} files - splitting")
                 split_groups = self._split_large_group_simple(group)
                 validated_groups.extend(split_groups)
             else:
@@ -346,9 +307,7 @@ class GroupingEngine:
 
         return validated_groups
 
-    def _groups_to_prs(
-        self, groups: list[ChangeGroup], analysis: OutstandingChangesAnalysis
-    ) -> list[PRRecommendation]:
+    def _groups_to_prs(self, groups: list[ChangeGroup], analysis: OutstandingChangesAnalysis) -> list[PRRecommendation]:
         """Convert groups to PR recommendations with better titles and descriptions."""
 
         pr_recommendations = []
@@ -420,9 +379,7 @@ class GroupingEngine:
             else:
                 return f"{prefix} update {group.category} files ({file_count} files)"
 
-    def _generate_smart_description(
-        self, group: ChangeGroup, _analysis: OutstandingChangesAnalysis
-    ) -> str:
+    def _generate_smart_description(self, group: ChangeGroup, _analysis: OutstandingChangesAnalysis) -> str:
         """Generate smart descriptions with real statistics."""
 
         # Calculate real statistics
@@ -446,18 +403,12 @@ class GroupingEngine:
             lines.extend([f"### Files with changes ({len(files_with_changes)}):", ""])
 
             # Show top 10 files with most changes
-            top_files = sorted(
-                files_with_changes, key=lambda f: f.total_changes, reverse=True
-            )[:10]
+            top_files = sorted(files_with_changes, key=lambda f: f.total_changes, reverse=True)[:10]
             for file in top_files:
-                lines.append(
-                    f"- `{file.path}` (+{file.lines_added}/-{file.lines_deleted})"
-                )
+                lines.append(f"- `{file.path}` (+{file.lines_added}/-{file.lines_deleted})")
 
             if len(files_with_changes) > 10:
-                lines.append(
-                    f"- ... and {len(files_with_changes) - 10} more files with changes"
-                )
+                lines.append(f"- ... and {len(files_with_changes) - 10} more files with changes")
 
         if files_without_changes:
             lines.extend(
@@ -520,9 +471,7 @@ class GroupingEngine:
         else:
             return "low"
 
-    def _determine_risk_level(
-        self, group: ChangeGroup, total_lines: int, files_count: int
-    ) -> str:
+    def _determine_risk_level(self, group: ChangeGroup, total_lines: int, files_count: int) -> str:
         """Determine risk based on real factors."""
         # High risk: lots of changes OR core files OR config changes
         if total_lines > 1000:

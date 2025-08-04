@@ -185,9 +185,7 @@ async def estimate_untracked_file_size(repo_path: str, file_path: str) -> int:
         return 0
 
 
-async def get_comprehensive_file_analysis(
-    analyzer_client, repo_path: str
-) -> dict[str, Any]:
+async def get_comprehensive_file_analysis(analyzer_client, repo_path: str) -> dict[str, Any]:
     """Get comprehensive analysis including untracked files with size estimates"""
 
     # Get working directory changes (includes untracked files)
@@ -198,15 +196,11 @@ async def get_comprehensive_file_analysis(
     wd_data = json.loads(wd_result[0].text)
 
     # Get staged changes
-    staged_result = await analyzer_client.call_tool(
-        "analyze_staged_changes", {"repository_path": repo_path, "include_diffs": False}
-    )
+    staged_result = await analyzer_client.call_tool("analyze_staged_changes", {"repository_path": repo_path, "include_diffs": False})
     staged_data = json.loads(staged_result[0].text)
 
     # ENHANCED: Get detailed untracked file analysis
-    untracked_result = await analyzer_client.call_tool(
-        "get_untracked_files", {"repository_path": repo_path}
-    )
+    untracked_result = await analyzer_client.call_tool("get_untracked_files", {"repository_path": repo_path})
     untracked_data = json.loads(untracked_result[0].text)
 
     all_files = []
@@ -219,9 +213,7 @@ async def get_comprehensive_file_analysis(
                 real_lines_added = 0
                 real_lines_deleted = 0
 
-                if file_obj.get("status") in ["M", "A"] and not file_obj.get(
-                    "is_binary", False
-                ):
+                if file_obj.get("status") in ["M", "A"] and not file_obj.get("is_binary", False):
                     try:
                         diff_result = await analyzer_client.call_tool(
                             "get_file_diff",
@@ -239,9 +231,7 @@ async def get_comprehensive_file_analysis(
                             real_lines_added = stats.get("lines_added", 0)
                             real_lines_deleted = stats.get("lines_deleted", 0)
                     except Exception as e:
-                        print(
-                            f"      ⚠️  Could not get diff for {file_obj.get('path')}: {e}"
-                        )
+                        print(f"      ⚠️  Could not get diff for {file_obj.get('path')}: {e}")
 
                 normalized_file = {
                     "path": file_obj.get("path"),
@@ -304,16 +294,12 @@ async def get_comprehensive_file_analysis(
     untracked_files = [f for f in all_files if f["file_type"] == "untracked"]
     staged_files = [f for f in all_files if f["file_type"] == "staged"]
 
-    files_with_changes = [
-        f for f in all_files if f["lines_added"] > 0 or f["lines_deleted"] > 0
-    ]
+    files_with_changes = [f for f in all_files if f["lines_added"] > 0 or f["lines_deleted"] > 0]
     total_new_lines = sum(f["lines_added"] for f in all_files)
 
     print("   📊 Comprehensive analysis:")
     print(f"      • Tracked files: {len(tracked_files)}")
-    print(
-        f"      • Untracked files: {len(untracked_files)} ({total_untracked_lines:,} estimated lines)"
-    )
+    print(f"      • Untracked files: {len(untracked_files)} ({total_untracked_lines:,} estimated lines)")
     print(f"      • Staged files: {len(staged_files)}")
     print(f"      • Files with changes: {len(files_with_changes)}")
     print(f"      • Total new lines: {total_new_lines:,}")
@@ -361,9 +347,7 @@ async def discover_analyzer_capabilities():
                         for param_name, param_info in schema["properties"].items():
                             params[param_name] = {
                                 "type": param_info.get("type", "unknown"),
-                                "description": param_info.get(
-                                    "description", "No description"
-                                ),
+                                "description": param_info.get("description", "No description"),
                                 "default": param_info.get("default"),
                                 "required": param_name in schema.get("required", []),
                             }
@@ -376,14 +360,8 @@ async def discover_analyzer_capabilities():
                     print(f"     📊 Parameters ({len(params)}):")
                     for param_name, param_data in params.items():
                         required_str = " (required)" if param_data["required"] else ""
-                        default_str = (
-                            f" [default: {param_data['default']}]"
-                            if param_data["default"] is not None
-                            else ""
-                        )
-                        print(
-                            f"       • {param_name}: {param_data['type']}{required_str}{default_str}"
-                        )
+                        default_str = f" [default: {param_data['default']}]" if param_data["default"] is not None else ""
+                        print(f"       • {param_name}: {param_data['type']}{required_str}{default_str}")
                         print(f"         {param_data['description']}")
 
             return tool_info
@@ -413,14 +391,10 @@ async def test_messy_developer_workflow(analysis_data: dict[str, Any]):
     print(f"   • Outstanding work: {has_outstanding_work}")
     print(f"   • Total changes: {total_changes:,}")
     print(f"   • Risk level: {risk_level}")
-    print(
-        f"   • Working directory changes: {quick_stats.get('working_directory_changes', 0)}"
-    )
+    print(f"   • Working directory changes: {quick_stats.get('working_directory_changes', 0)}")
     print(f"   • Staged changes: {quick_stats.get('staged_changes', 0)}")
     print(f"   • Unpushed commits: {quick_stats.get('unpushed_commits', 0)}")
-    print(
-        f"   • Untracked files: {untracked_count} ({untracked_lines:,} lines of new code)"
-    )
+    print(f"   • Untracked files: {untracked_count} ({untracked_lines:,} lines of new code)")
 
     if not has_outstanding_work and untracked_count == 0:
         print("✅ Repository is clean - no workflow needed")
@@ -435,24 +409,13 @@ async def test_messy_developer_workflow(analysis_data: dict[str, Any]):
             print(f"\n🔀 Routing workflow based on risk level: {risk_level}")
 
             if risk_level == "high":
-                await _handle_high_risk_workflow(
-                    analyzer_client, pr_client, analysis_data
-                )
-            elif (
-                quick_stats.get("working_directory_changes", 0) > 0
-                or untracked_count > 0
-            ):
-                await _handle_working_directory_workflow(
-                    analyzer_client, pr_client, analysis_data
-                )
+                await _handle_high_risk_workflow(analyzer_client, pr_client, analysis_data)
+            elif quick_stats.get("working_directory_changes", 0) > 0 or untracked_count > 0:
+                await _handle_working_directory_workflow(analyzer_client, pr_client, analysis_data)
             elif quick_stats.get("unpushed_commits", 0) > 0:
-                await _handle_unpushed_commits_workflow(
-                    analyzer_client, pr_client, analysis_data
-                )
+                await _handle_unpushed_commits_workflow(analyzer_client, pr_client, analysis_data)
             else:
-                await _handle_default_workflow(
-                    analyzer_client, pr_client, analysis_data
-                )
+                await _handle_default_workflow(analyzer_client, pr_client, analysis_data)
 
             # Finally, get PR recommendations with enhanced data
             await _generate_pr_recommendations(pr_client, analysis_data)
@@ -475,22 +438,16 @@ async def _handle_high_risk_workflow(analyzer_client, pr_client, analysis_data):
         # Validate staged changes if any
         if analysis_data.get("quick_stats", {}).get("staged_changes", 0) > 0:
             print("   🔍 Validating staged changes...")
-            validation_result = await analyzer_client.call_tool(
-                "validate_staged_changes", {"repository_path": repo_path}
-            )
+            validation_result = await analyzer_client.call_tool("validate_staged_changes", {"repository_path": repo_path})
             validation_data = json.loads(validation_result[0].text)
-            print(
-                f"   ✅ Validation result: {'VALID' if validation_data.get('valid') else 'INVALID'}"
-            )
+            print(f"   ✅ Validation result: {'VALID' if validation_data.get('valid') else 'INVALID'}")
 
             if not validation_data.get("valid"):
                 print(f"   ⚠️  Validation errors: {validation_data.get('errors', [])}")
 
         # Check for potential conflicts
         print("   🔍 Detecting potential conflicts...")
-        conflicts_result = await analyzer_client.call_tool(
-            "detect_conflicts", {"repository_path": repo_path, "target_branch": "main"}
-        )
+        conflicts_result = await analyzer_client.call_tool("detect_conflicts", {"repository_path": repo_path, "target_branch": "main"})
         conflicts_data = json.loads(conflicts_result[0].text)
 
         if conflicts_data.get("has_potential_conflicts"):
@@ -531,20 +488,14 @@ async def _handle_working_directory_workflow(analyzer_client, pr_client, analysi
         untracked_count = comprehensive_stats.get("untracked_count", 0)
         untracked_lines = comprehensive_stats.get("untracked_lines", 0)
         if untracked_count > 0:
-            print(
-                f"      • untracked: {untracked_count} files ({untracked_lines:,} estimated lines)"
-            )
+            print(f"      • untracked: {untracked_count} files ({untracked_lines:,} estimated lines)")
 
         # Get untracked files specifically if we have many
         if summary.get("untracked", 0) > 5:
             print("   🔍 Analyzing untracked files...")
-            untracked_result = await analyzer_client.call_tool(
-                "get_untracked_files", {"repository_path": repo_path}
-            )
+            untracked_result = await analyzer_client.call_tool("get_untracked_files", {"repository_path": repo_path})
             untracked_data = json.loads(untracked_result[0].text)
-            print(
-                f"   📁 Found {untracked_data.get('untracked_count', 0)} untracked files"
-            )
+            print(f"   📁 Found {untracked_data.get('untracked_count', 0)} untracked files")
 
             # Show sample of large untracked files
             untracked_files = untracked_data.get("files", [])
@@ -570,9 +521,7 @@ async def _handle_unpushed_commits_workflow(analyzer_client, pr_client, analysis
 
     try:
         # Check push readiness
-        push_result = await analyzer_client.call_tool(
-            "get_push_readiness", {"repository_path": repo_path}
-        )
+        push_result = await analyzer_client.call_tool("get_push_readiness", {"repository_path": repo_path})
         push_data = json.loads(push_result[0].text)
 
         ready_to_push = push_data.get("ready_to_push", False)
@@ -612,9 +561,7 @@ async def _handle_default_workflow(analyzer_client, pr_client, analysis_data):
     repo_path = analysis_data.get("repository_path", ".")
 
     try:
-        health_result = await analyzer_client.call_tool(
-            "analyze_repository_health", {"repository_path": repo_path}
-        )
+        health_result = await analyzer_client.call_tool("analyze_repository_health", {"repository_path": repo_path})
         health_data = json.loads(health_result[0].text)
 
         health_score = health_data.get("health_score", 0)
@@ -641,9 +588,7 @@ async def _generate_pr_recommendations(pr_client, analysis_data):
 
     try:
         # Use the enhanced file data that includes untracked files
-        result = await pr_client.call_tool(
-            "generate_pr_recommendations", {"analysis_data": analysis_data}
-        )
+        result = await pr_client.call_tool("generate_pr_recommendations", {"analysis_data": analysis_data})
 
         pr_data = json.loads(result[0].text)
         print("   ✅ PR recommendations generated")
@@ -682,10 +627,7 @@ async def _generate_pr_recommendations(pr_client, analysis_data):
                 test_in_pr = 0
 
                 for f in files:
-                    if any(
-                        pattern in f
-                        for pattern in ["src/pr_recommender/", "tests/", "Makefile"]
-                    ):
+                    if any(pattern in f for pattern in ["src/pr_recommender/", "tests/", "Makefile"]):
                         if "test" in f.lower():
                             test_in_pr += 1
                         elif f.endswith((".py", ".js", ".ts")):
@@ -704,9 +646,7 @@ async def _generate_pr_recommendations(pr_client, analysis_data):
 
                 # Show file type breakdown
                 if untracked_in_pr > 0:
-                    print(
-                        f"    🆕 New files: {untracked_in_pr} ({source_in_pr} source, {test_in_pr} tests)"
-                    )
+                    print(f"    🆕 New files: {untracked_in_pr} ({source_in_pr} source, {test_in_pr} tests)")
                 if config_in_pr > 0:
                     print(f"    ⚙️  Config files: {config_in_pr}")
 
@@ -723,13 +663,9 @@ async def _generate_pr_recommendations(pr_client, analysis_data):
 
             # Enhanced summary
             total_files = sum(len(rec.get("files", [])) for rec in recommendations)
-            total_lines = sum(
-                rec.get("total_lines_changed", 0) for rec in recommendations
-            )
+            total_lines = sum(rec.get("total_lines_changed", 0) for rec in recommendations)
 
-            print(
-                f"  📊 Summary: Generated {len(recommendations)} atomic PRs from {total_files} files ({total_lines:,} total lines)"
-            )
+            print(f"  📊 Summary: Generated {len(recommendations)} atomic PRs from {total_files} files ({total_lines:,} total lines)")
 
     except Exception as e:
         print(f"   ❌ PR recommendation error: {e}")
@@ -749,9 +685,7 @@ async def test_full_integration():
         tool_info = await discover_analyzer_capabilities()
 
         if not tool_info:
-            print(
-                "⚠️  Could not discover analyzer capabilities, proceeding with mock data..."
-            )
+            print("⚠️  Could not discover analyzer capabilities, proceeding with mock data...")
             return await test_pr_recommender_with_mock()
 
         # Step 2: Get comprehensive analysis
@@ -762,9 +696,7 @@ async def test_full_integration():
             print("✅ Connected to Local Repo Analyzer")
 
             # Get outstanding summary with detailed analysis
-            analysis_result = await analyzer_client.call_tool(
-                "get_outstanding_summary", {"repository_path": ".", "detailed": True}
-            )
+            analysis_result = await analyzer_client.call_tool("get_outstanding_summary", {"repository_path": ".", "detailed": True})
 
             # Extract analysis data
             analysis_data = json.loads(analysis_result[0].text)
@@ -772,56 +704,34 @@ async def test_full_integration():
             print("📋 Analysis completed:")
             print(f"   • Repository: {analysis_data.get('repository_name', 'Unknown')}")
             print(f"   • Branch: {analysis_data.get('current_branch', 'Unknown')}")
-            print(
-                f"   • Outstanding changes: {analysis_data.get('total_outstanding_changes', 0)}"
-            )
-            print(
-                f"   • Risk level: {analysis_data.get('risk_assessment', {}).get('risk_level', 'unknown')}"
-            )
+            print(f"   • Outstanding changes: {analysis_data.get('total_outstanding_changes', 0)}")
+            print(f"   • Risk level: {analysis_data.get('risk_assessment', {}).get('risk_level', 'unknown')}")
 
             # Step 2.5: Get comprehensive file details including untracked files
             if analysis_data.get("has_outstanding_work"):
-                print(
-                    "\n📁 Step 2.5: Getting comprehensive file information (including untracked files)..."
-                )
+                print("\n📁 Step 2.5: Getting comprehensive file information (including untracked files)...")
 
                 # Get comprehensive analysis that includes untracked files
-                comprehensive_analysis = await get_comprehensive_file_analysis(
-                    analyzer_client, "."
-                )
+                comprehensive_analysis = await get_comprehensive_file_analysis(analyzer_client, ".")
 
                 # ENHANCED: Merge comprehensive analysis into the main analysis data
                 analysis_data["all_files"] = comprehensive_analysis["all_files"]
-                analysis_data["working_directory_files"] = comprehensive_analysis[
-                    "working_directory_files"
-                ]
+                analysis_data["working_directory_files"] = comprehensive_analysis["working_directory_files"]
                 analysis_data["staged_files"] = comprehensive_analysis["staged_files"]
-                analysis_data["untracked_files"] = comprehensive_analysis[
-                    "untracked_files"
-                ]
+                analysis_data["untracked_files"] = comprehensive_analysis["untracked_files"]
                 analysis_data["comprehensive_stats"] = comprehensive_analysis["stats"]
 
                 # Update total changes to include untracked files
                 original_changes = analysis_data.get("total_outstanding_changes", 0)
                 untracked_lines = comprehensive_analysis["stats"]["untracked_lines"]
                 total_changes_including_untracked = original_changes + untracked_lines
-                analysis_data[
-                    "total_outstanding_changes"
-                ] = total_changes_including_untracked
+                analysis_data["total_outstanding_changes"] = total_changes_including_untracked
 
                 print("   ✅ Enhanced analysis complete:")
-                print(
-                    f"      • Tracked files: {comprehensive_analysis['stats']['tracked_count']}"
-                )
-                print(
-                    f"      • Untracked files: {comprehensive_analysis['stats']['untracked_count']}"
-                )
-                print(
-                    f"      • Staged files: {comprehensive_analysis['stats']['staged_count']}"
-                )
-                print(
-                    f"      • Total impact: {total_changes_including_untracked:,} lines"
-                )
+                print(f"      • Tracked files: {comprehensive_analysis['stats']['tracked_count']}")
+                print(f"      • Untracked files: {comprehensive_analysis['stats']['untracked_count']}")
+                print(f"      • Staged files: {comprehensive_analysis['stats']['staged_count']}")
+                print(f"      • Total impact: {total_changes_including_untracked:,} lines")
 
         # Step 3: Execute enhanced messy developer workflow
         success = await test_messy_developer_workflow(analysis_data)
@@ -866,9 +776,7 @@ async def test_pr_recommender_with_mock():
 
             # Test PR recommendation with mock data
             print("\n🤖 Testing PR recommendation with mock data...")
-            result = await client.call_tool(
-                "generate_pr_recommendations", {"analysis_data": MOCK_ANALYSIS}
-            )
+            result = await client.call_tool("generate_pr_recommendations", {"analysis_data": MOCK_ANALYSIS})
 
             pr_data = json.loads(result[0].text)
             print("✅ PR Recommendation Result:")
@@ -910,11 +818,7 @@ def print_pr_recommendations(result):
                             lines = desc.split("\n")
                             # Find the first meaningful line
                             for line in lines:
-                                if (
-                                    line.strip()
-                                    and not line.startswith("#")
-                                    and not line.startswith("**")
-                                ):
+                                if line.strip() and not line.startswith("#") and not line.startswith("**"):
                                     print(f"    📄 Description: {line.strip()}")
                                     break
                         if "priority" in rec:
@@ -953,11 +857,7 @@ def print_pr_recommendations(result):
                                     ]
                                 )
                             ]
-                            other_files = [
-                                f
-                                for f in files
-                                if f not in new_files and f not in config_files
-                            ]
+                            other_files = [f for f in files if f not in new_files and f not in config_files]
 
                             if new_files:
                                 print(f"    🆕 New feature files: {len(new_files)}")
@@ -970,11 +870,7 @@ def print_pr_recommendations(result):
                         if "reasoning" in rec:
                             reasoning = rec["reasoning"]
                             # Show first sentence
-                            short_reasoning = (
-                                reasoning.split(".")[0]
-                                if "." in reasoning
-                                else reasoning
-                            )
+                            short_reasoning = reasoning.split(".")[0] if "." in reasoning else reasoning
                             print(f"    💭 Reasoning: {short_reasoning}")
                     else:
                         print(f"    📄 {rec}")
@@ -1028,9 +924,7 @@ def main():
         default="integration",  # Changed default to integration
         help="Test mode to run",
     )
-    parser.add_argument(
-        "--repository-path", default=".", help="Repository path to analyze"
-    )
+    parser.add_argument("--repository-path", default=".", help="Repository path to analyze")
 
     args = parser.parse_args()
 
