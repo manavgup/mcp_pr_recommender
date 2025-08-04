@@ -162,6 +162,83 @@ def create_server() -> tuple[FastMCP, dict]:
         raise
 
 
+def register_prompts(mcp: FastMCP):
+    """Register prompts with the FastMCP server for MCP inspector visibility.
+    
+    Args:
+        mcp: FastMCP server instance.
+    """
+    try:
+        logger.info("Starting prompt registration")
+
+        @mcp.prompt
+        def grouping_system_prompt() -> str:
+            """System prompt for LLM file grouping into logical PR units."""
+            return """You are an expert software engineer who groups code changes into logical, atomic Pull Requests.
+
+GOAL: Group the given files into the OPTIMAL number of logical PR units based on their relationships.
+
+PRINCIPLES:
+- Each PR should be atomic (one logical change)
+- Related files should be grouped together
+- Large config changes (like poetry.lock) should be separate
+- Don't create PRs for files with no actual changes unless they're part of a logical group
+- Group by functional relationship, not just directory
+- Create as many or as few PRs as makes sense for the changes
+
+RESPOND in this JSON format:
+{
+  "groups": [
+    {
+      "id": "descriptive_group_name",
+      "files": ["file1.py", "file2.py"],
+      "category": "feature|config|test|docs|chore",
+      "reasoning": "Why these files belong together",
+      "confidence": 0.0-1.0
+    }
+  ],
+  "rationale": "Overall explanation of the grouping strategy"
+}
+
+IMPORTANT: The number of groups should be whatever makes logical sense - could be 1 PR or 10 PRs depending on the changes."""
+
+        @mcp.prompt
+        def grouping_user_prompt(
+            files_count: int,
+            files_with_changes: int,
+            files_without_changes: int,
+            total_changes: int,
+            risk_level: str,
+            file_list: str,
+            summary: str
+        ) -> str:
+            """User prompt template for LLM file grouping with dynamic file information."""
+            return f"""Group these {files_count} files into logical Pull Requests:
+
+**Repository Context:**
+- Files with actual changes: {files_with_changes}
+- Files without changes: {files_without_changes}
+- Total line changes: {total_changes:,}
+- Risk level: {risk_level}
+
+**Files to group:**
+{file_list}
+
+**Additional Context:**
+{summary}
+
+**Key Question:** Should files without changes be grouped with related files that DO have changes, or should they be in separate cleanup PRs?
+
+Please group these files into the optimal number of logical, atomic Pull Requests."""
+
+        logger.info("Prompt registration completed successfully")
+
+    except Exception as e:
+        logger.error(f"Failed to register prompts: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
+
+
 def register_tools(mcp: FastMCP):
     """Register all tools with the FastMCP server.
 
@@ -270,6 +347,11 @@ async def run_stdio_server():
         mcp.validator = services["validator"]
         logger.info("Server context configured")
 
+        # Register prompts first
+        logger.info("Registering prompts...")
+        register_prompts(mcp)
+        logger.info("Prompts registration completed")
+
         # Register tools
         logger.info("Registering tools...")
         register_tools(mcp)
@@ -325,6 +407,11 @@ def run_http_server(
         mcp.strategy_manager = services["strategy_manager"]
         mcp.validator = services["validator"]
         logger.info("Server context configured")
+
+        # Register prompts first
+        logger.info("Registering prompts...")
+        register_prompts(mcp)
+        logger.info("Prompts registration completed")
 
         # Register tools
         logger.info("Registering tools...")
