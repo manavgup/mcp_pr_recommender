@@ -621,8 +621,12 @@ def mock_analyzer_client():
     }
 
     client.get_detailed_changes.return_value = [
-        FileChangeFactory.create(file_path="src/auth.py", change_type="modified", risk_score=0.8),
-        FileChangeFactory.create(file_path="src/user.py", change_type="modified", risk_score=0.4),
+        FileChangeFactory.create(
+            file_path="src/auth.py", change_type="modified", risk_score=0.8
+        ),
+        FileChangeFactory.create(
+            file_path="src/user.py", change_type="modified", risk_score=0.4
+        ),
     ]
 
     return client
@@ -668,19 +672,27 @@ def assert_recommendation_valid(recommendation: dict[str, Any], rules: dict[str,
 
     # Check file count limits
     file_count = len(recommendation.get("files", []))
-    assert file_count >= rules.get("min_files_per_pr", 1), f"Too few files: {file_count}"
-    assert file_count <= rules.get("max_files_per_pr", 100), f"Too many files: {file_count}"
+    assert file_count >= rules.get(
+        "min_files_per_pr", 1
+    ), f"Too few files: {file_count}"
+    assert file_count <= rules.get(
+        "max_files_per_pr", 100
+    ), f"Too many files: {file_count}"
 
     # Check valid enum values
     if "estimated_size" in recommendation:
         valid_sizes = rules.get("valid_sizes", [])
         if valid_sizes:
-            assert recommendation["estimated_size"] in valid_sizes, f"Invalid size: {recommendation['estimated_size']}"
+            assert (
+                recommendation["estimated_size"] in valid_sizes
+            ), f"Invalid size: {recommendation['estimated_size']}"
 
     if "priority" in recommendation:
         valid_priorities = rules.get("valid_priorities", [])
         if valid_priorities:
-            assert recommendation["priority"] in valid_priorities, f"Invalid priority: {recommendation['priority']}"
+            assert (
+                recommendation["priority"] in valid_priorities
+            ), f"Invalid priority: {recommendation['priority']}"
 
 
 @pytest.fixture
@@ -723,7 +735,9 @@ def edge_case_scenarios():
         },
         "all_high_risk": {
             "description": "All files are high risk",
-            "input": {"changes": [FileChangeFactory.create(risk_score=0.9) for _ in range(5)]},
+            "input": {
+                "changes": [FileChangeFactory.create(risk_score=0.9) for _ in range(5)]
+            },
             "expected_behavior": "recommend_small_prs",
         },
         "no_tests": {
@@ -740,8 +754,12 @@ def edge_case_scenarios():
             "description": "Only configuration files changed",
             "input": {
                 "changes": [
-                    FileChangeFactory.create(file_path="config/production.json", risk_score=0.95),
-                    FileChangeFactory.create(file_path="config/staging.json", risk_score=0.9),
+                    FileChangeFactory.create(
+                        file_path="config/production.json", risk_score=0.95
+                    ),
+                    FileChangeFactory.create(
+                        file_path="config/staging.json", risk_score=0.9
+                    ),
                 ]
             },
             "expected_behavior": "separate_config_pr",
@@ -755,14 +773,24 @@ def performance_test_data():
     return {
         "large_changeset": {
             "file_count": 100,
-            "changes": [FileChangeFactory.create(file_path=f"src/module_{i:03d}.py") for i in range(100)],
+            "changes": [
+                FileChangeFactory.create(file_path=f"src/module_{i:03d}.py")
+                for i in range(100)
+            ],
         },
         "complex_dependencies": {
             "file_count": 20,
-            "changes": [FileChangeFactory.create(file_path=f"src/interconnected_{i}.py") for i in range(20)],
+            "changes": [
+                FileChangeFactory.create(file_path=f"src/interconnected_{i}.py")
+                for i in range(20)
+            ],
             "dependency_matrix": {
                 # Mock complex dependency relationships
-                f"src/interconnected_{i}.py": [f"src/interconnected_{j}.py" for j in range(max(0, i - 3), min(20, i + 3)) if j != i]
+                f"src/interconnected_{i}.py": [
+                    f"src/interconnected_{j}.py"
+                    for j in range(max(0, i - 3), min(20, i + 3))
+                    if j != i
+                ]
                 for i in range(20)
             },
         },

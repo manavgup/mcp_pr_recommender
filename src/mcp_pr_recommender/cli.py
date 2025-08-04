@@ -43,14 +43,18 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    parser.add_argument("--transport", type=str, help="Transport type (stdio, http, websocket, sse)")
+    parser.add_argument(
+        "--transport", type=str, help="Transport type (stdio, http, websocket, sse)"
+    )
     parser.add_argument("--config", type=str, help="Path to transport config YAML")
     parser.add_argument(
         "--port",
         type=int,
         help="Port to run the HTTP/WebSocket server on (overrides config/env)",
     )
-    parser.add_argument("--host", type=str, help="Host to bind the server to (overrides config/env)")
+    parser.add_argument(
+        "--host", type=str, help="Host to bind the server to (overrides config/env)"
+    )
     parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
