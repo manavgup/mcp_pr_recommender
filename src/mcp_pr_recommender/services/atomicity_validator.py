@@ -28,9 +28,7 @@ class AtomicityValidator:
                 split_groups = self._split_group(group)
                 validated_groups.extend(split_groups)
 
-        self.logger.info(
-            f"Atomicity validation: {len(groups)} -> {len(validated_groups)} groups"
-        )
+        self.logger.info(f"Atomicity validation: {len(groups)} -> {len(validated_groups)} groups")
         return validated_groups
 
     def _is_atomic(self, group: ChangeGroup) -> bool:
@@ -109,20 +107,14 @@ class AtomicityValidator:
 
         if has_migration and has_model:
             # This might need careful ordering
-            self.logger.warning(
-                "Migration and model changes detected - requires careful review"
-            )
+            self.logger.warning("Migration and model changes detected - requires careful review")
 
         # Schema changes with API changes
         has_schema = any("schema" in path.lower() for path in file_paths)
-        has_api = any(
-            "api" in path.lower() or "controller" in path.lower() for path in file_paths
-        )
+        has_api = any("api" in path.lower() or "controller" in path.lower() for path in file_paths)
 
         if has_schema and has_api:
-            self.logger.warning(
-                "Schema and API changes detected - check deployment order"
-            )
+            self.logger.warning("Schema and API changes detected - check deployment order")
 
         return False  # For now, return False but log warnings
 
@@ -159,8 +151,7 @@ class AtomicityValidator:
                 id=f"{group.id}_split_{i}",
                 files=files,
                 category=group.category,
-                confidence=group.confidence
-                * 0.9,  # Slightly lower confidence after split
+                confidence=group.confidence * 0.9,  # Slightly lower confidence after split
                 reasoning=f"Split from {group.id}: {directory}",
                 semantic_similarity=group.semantic_similarity,
             )
@@ -218,8 +209,7 @@ class AtomicityValidator:
                 id=f"{group.id}_chunk_{i // max_files}",
                 files=chunk_files,
                 category=group.category,
-                confidence=group.confidence
-                * 0.8,  # Lower confidence for size-based split
+                confidence=group.confidence * 0.8,  # Lower confidence for size-based split
                 reasoning=f"Size-based split from {group.id}",
                 semantic_similarity=group.semantic_similarity,
             )

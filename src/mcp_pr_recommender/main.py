@@ -164,7 +164,7 @@ def create_server() -> tuple[FastMCP, dict]:
 
 def register_prompts(mcp: FastMCP):
     """Register prompts with the FastMCP server for MCP inspector visibility.
-    
+
     Args:
         mcp: FastMCP server instance.
     """
@@ -210,7 +210,7 @@ IMPORTANT: The number of groups should be whatever makes logical sense - could b
             total_changes: int,
             risk_level: str,
             file_list: str,
-            summary: str
+            summary: str,
         ) -> str:
             """User prompt template for LLM file grouping with dynamic file information."""
             return f"""Group these {files_count} files into logical Pull Requests:
@@ -227,7 +227,8 @@ IMPORTANT: The number of groups should be whatever makes logical sense - could b
 **Additional Context:**
 {summary}
 
-**Key Question:** Should files without changes be grouped with related files that DO have changes, or should they be in separate cleanup PRs?
+**Key Question:** Should files without changes be grouped with related files that DO have changes,
+    or should they be in separate cleanup PRs?
 
 Please group these files into the optimal number of logical, atomic Pull Requests."""
 
@@ -256,22 +257,14 @@ def register_tools(mcp: FastMCP):
         @mcp.tool()
         async def generate_pr_recommendations(
             ctx: Context,
-            analysis_data: dict[str, Any] = Field(
-                ..., description="Git analysis data from mcp_local_repo_analyzer"
-            ),
-            strategy: str = Field(
-                default="semantic", description="Grouping strategy to use"
-            ),
-            max_files_per_pr: int = Field(
-                default=8, description="Maximum files per PR"
-            ),
+            analysis_data: dict[str, Any] = Field(..., description="Git analysis data from mcp_local_repo_analyzer"),
+            strategy: str = Field(default="semantic", description="Grouping strategy to use"),
+            max_files_per_pr: int = Field(default=8, description="Maximum files per PR"),
         ) -> dict[str, Any]:
             """Generate PR recommendations from git analysis data."""
             await ctx.info(f"Generating PR recommendations using {strategy} strategy")
             try:
-                return await mcp.pr_generator.generate_recommendations(
-                    analysis_data, strategy, max_files_per_pr
-                )
+                return await mcp.pr_generator.generate_recommendations(analysis_data, strategy, max_files_per_pr)
             except Exception as e:
                 await ctx.error(f"Failed to generate PR recommendations: {str(e)}")
                 return {"error": f"Failed to generate recommendations: {str(e)}"}
@@ -279,16 +272,12 @@ def register_tools(mcp: FastMCP):
         @mcp.tool()
         async def analyze_pr_feasibility(
             ctx: Context,
-            pr_recommendation: dict[str, Any] = Field(
-                ..., description="PR recommendation to analyze"
-            ),
+            pr_recommendation: dict[str, Any] = Field(..., description="PR recommendation to analyze"),
         ) -> dict[str, Any]:
             """Analyze the feasibility and risks of a specific PR recommendation."""
             await ctx.info("Analyzing PR feasibility")
             try:
-                return await mcp.feasibility_analyzer.analyze_feasibility(
-                    pr_recommendation
-                )
+                return await mcp.feasibility_analyzer.analyze_feasibility(pr_recommendation)
             except Exception as e:
                 await ctx.error(f"Failed to analyze PR feasibility: {str(e)}")
                 return {"error": f"Failed to analyze feasibility: {str(e)}"}
@@ -308,9 +297,7 @@ def register_tools(mcp: FastMCP):
         @mcp.tool()
         async def validate_pr_recommendations(
             ctx: Context,
-            recommendations: list[dict[str, Any]] = Field(
-                ..., description="List of PR recommendations to validate"
-            ),
+            recommendations: list[dict[str, Any]] = Field(..., description="List of PR recommendations to validate"),
         ) -> dict[str, Any]:
             """Validate a set of PR recommendations for completeness and atomicity."""
             await ctx.info(f"Validating {len(recommendations)} PR recommendations")
@@ -365,9 +352,7 @@ async def run_stdio_server():
             await mcp.run_async(transport="stdio")
         except (BrokenPipeError, EOFError) as e:
             # Handle stdio stream closure gracefully
-            logger.info(
-                f"Input stream closed ({type(e).__name__}), shutting down server gracefully"
-            )
+            logger.info(f"Input stream closed ({type(e).__name__}), shutting down server gracefully")
         except ConnectionResetError as e:
             # Handle connection reset gracefully
             logger.info(f"Connection reset ({e}), shutting down server gracefully")
@@ -386,9 +371,7 @@ async def run_stdio_server():
         sys.exit(1)
 
 
-def run_http_server(
-    host: str = "127.0.0.1", port: int = 9071, transport: str = "streamable-http"
-):
+def run_http_server(host: str = "127.0.0.1", port: int = 9071, transport: str = "streamable-http"):
     """Run the server in HTTP mode for MCP Gateway integration."""
     logger.info("=== Starting PR Recommender (HTTP) ===")
     logger.info(f"🌐 Transport: {transport}")
@@ -452,9 +435,7 @@ def main():
         default="stdio",
         help="Transport protocol to use",
     )
-    parser.add_argument(
-        "--host", default="127.0.0.1", help="Host to bind to (HTTP mode only)"
-    )
+    parser.add_argument("--host", default="127.0.0.1", help="Host to bind to (HTTP mode only)")
     parser.add_argument(
         "--port",
         type=int,

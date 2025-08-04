@@ -15,12 +15,8 @@ class ChangeGroup(BaseModel):
     category: str = Field(..., description="Category (feature, bugfix, refactor, etc.)")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence in grouping")
     reasoning: str = Field(..., description="Why these files belong together")
-    semantic_similarity: float = Field(
-        default=0.0, description="Semantic similarity score"
-    )
-    dependencies: list[str] = Field(
-        default_factory=list, description="Other group IDs this depends on"
-    )
+    semantic_similarity: float = Field(default=0.0, description="Semantic similarity score")
+    dependencies: list[str] = Field(default_factory=list, description="Other group IDs this depends on")
 
     @property
     def total_changes(self) -> int:
@@ -60,13 +56,9 @@ class PRStrategy(BaseModel):
     """Complete PR recommendation strategy."""
 
     strategy_name: str = Field(..., description="Strategy used")
-    source_analysis: OutstandingChangesAnalysis = Field(
-        ..., description="Input analysis"
-    )
+    source_analysis: OutstandingChangesAnalysis = Field(..., description="Input analysis")
     change_groups: list[ChangeGroup] = Field(..., description="Identified groups")
-    recommended_prs: list[PRRecommendation] = Field(
-        ..., description="Final recommendations"
-    )
+    recommended_prs: list[PRRecommendation] = Field(..., description="Final recommendations")
     analysis_timestamp: datetime = Field(default_factory=datetime.now)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -78,6 +70,4 @@ class PRStrategy(BaseModel):
     def average_pr_size(self) -> float:
         if not self.recommended_prs:
             return 0.0
-        return sum(pr.files_count for pr in self.recommended_prs) / len(
-            self.recommended_prs
-        )
+        return sum(pr.files_count for pr in self.recommended_prs) / len(self.recommended_prs)
