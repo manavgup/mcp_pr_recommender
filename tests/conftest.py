@@ -11,11 +11,87 @@ from unittest.mock import Mock
 
 import pytest
 
+# Import shared fixtures from mcp_shared_lib
+# Note: Direct import instead of pytest_plugins due to package structure
+try:
+    import sys
+    from pathlib import Path
+
+    # Add the mcp_shared_lib tests directory to the path
+    shared_lib_tests_path = (
+        Path(__file__).parent.parent.parent / "mcp_shared_lib" / "tests"
+    )
+    if shared_lib_tests_path.exists():
+        sys.path.insert(0, str(shared_lib_tests_path))
+        # Import specific fixtures instead of using wildcard import
+        try:
+            from conftest import (
+                sample_config,
+                temp_dir,
+                mock_git_client,
+                mock_change_detector,
+                mock_risk_assessor,
+                sample_repository_state,
+                mock_file_analyzer,
+            )
+        except ImportError:
+            # Fallback to local definitions
+            pass
+    else:
+        # Fallback: define essential fixtures locally
+        @pytest.fixture
+        def sample_config():
+            return {
+                "git_client": {"timeout": 30},
+                "analyzer": {"scan_depth": 10},
+            }
+
+        @pytest.fixture
+        def temp_dir():
+            import shutil
+            import tempfile
+
+            temp_dir = Path(tempfile.mkdtemp(prefix="test_"))
+            yield temp_dir
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+except ImportError:
+    # Fallback: define essential fixtures locally
+    @pytest.fixture
+    def sample_config():
+        return {
+            "git_client": {"timeout": 30},
+            "analyzer": {"scan_depth": 10},
+        }
+
+    @pytest.fixture
+    def temp_dir():
+        import shutil
+        import tempfile
+
+        temp_dir = Path(tempfile.mkdtemp(prefix="test_"))
+        yield temp_dir
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
 # TODO: [MCP monorepo] This import relies on PYTHONPATH including the monorepo root so that
 # mcp_shared_lib.test_utils.factories is importable. This is a short-term workaround.
 # Best practice is to move shared test utilities into a real subpackage under src/ (e.g., mcp_shared_lib.test_utils)
 # and import from there. Refactor this when possible.
-from mcp_shared_lib.test_utils.factories import FileChangeFactory, create_file_changes
+try:
+    from mcp_shared_lib.test_utils.factories import (
+        FileChangeFactory,
+        create_file_changes,
+    )
+except ImportError:
+    # Fallback: define essential factories locally
+    def create_file_changes(files, **kwargs):
+        return [{"file": f, **kwargs} for f in files]
+
+    class FileChangeFactory:
+        @staticmethod
+        def create(files, **kwargs):
+            return create_file_changes(files, **kwargs)
 
 
 @pytest.fixture
@@ -633,9 +709,11 @@ def mock_analyzer_client():
 
 
 # Utility functions for PR recommender testing
-def create_test_file_group(name: str, files: list[str], **kwargs):
+def create_test_file_group(
+    name: str, files: list[str], **kwargs: Any
+) -> dict[str, Any]:
     """Create a test file group."""
-    defaults = {
+    defaults: dict[str, Any] = {
         "group_id": name.lower().replace(" ", "_"),
         "name": name,
         "files": files,
@@ -648,9 +726,11 @@ def create_test_file_group(name: str, files: list[str], **kwargs):
     return defaults
 
 
-def create_recommendation_test_case(title: str, files: list[str], **kwargs):
+def create_recommendation_test_case(
+    title: str, files: list[str], **kwargs: Any
+) -> dict[str, Any]:
     """Create a recommendation test case."""
-    defaults = {
+    defaults: dict[str, Any] = {
         "title": title,
         "files": files,
         "estimated_size": "medium",

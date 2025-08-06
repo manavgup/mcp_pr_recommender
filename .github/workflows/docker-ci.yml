@@ -1,13 +1,14 @@
 # For details of what checks are run for PRs please refer below
 # docs: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
 
-name: Docker CI
+name: Docker CI (Disabled)
 
-on:
-  push:
-    branches: ["master"]
-  pull_request:
-  workflow_dispatch:
+# Workflow disabled - uncomment 'on:' section to re-enable
+# on:
+#   push:
+#     branches: ["master"]
+#   pull_request:
+#   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
