@@ -1774,7 +1774,7 @@ ws = ["websockets (>=15.0.1)"]
 
 [[package]]
 name = "mcp-shared-lib"
-version = "0.1.0"
+version = "0.2.0"
 description = "Shared library for MCP components providing common utilities, models, and tools"
 optional = false
 python-versions = "^3.10"

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mcp-pr-recommender"
-version = "0.1.0"
+version = "0.2.0"
 description = "AI-powered MCP server for intelligent PR grouping recommendations"
 authors = ["Manav Gupta <manavg@gmail.com>"]
 readme = "README.md"
