@@ -123,11 +123,10 @@ jobs:
           path: mcp_pr_recommender/dist/
           retention-days: 30
 
-      # Uncomment when ready to publish to PyPI
-      # - name: Publish to PyPI
-      #   if: success()
-      #   working-directory: mcp_pr_recommender
-      #   env:
-      #     PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      #   run: |
-      #     poetry publish --username __token__ --password $PYPI_TOKEN
+      - name: Publish to PyPI
+        if: success()
+        working-directory: mcp_pr_recommender
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          poetry publish --username __token__ --password $PYPI_TOKEN
