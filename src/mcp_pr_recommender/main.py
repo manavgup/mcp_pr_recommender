@@ -8,18 +8,23 @@ Author: Manav Gupta <manavg@gmail.com>
 Main entry point for the PR recommender server with both STDIO and HTTP transport support.
 Provides server setup, tool registration, and server execution.
 """
-
 import argparse
 import asyncio
 import sys
 import traceback
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastmcp import FastMCP
 from mcp_shared_lib.utils import logging_service
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from mcp_pr_recommender.prompts import (
+    get_enhanced_grouping_system_prompt,
+    get_grouping_user_prompt,
+)
 from mcp_pr_recommender.tools import (
     FeasibilityAnalyzerTool,
     PRRecommenderTool,
@@ -35,7 +40,7 @@ _initialization_lock = asyncio.Lock()
 
 
 @asynccontextmanager
-async def lifespan(_app):
+async def lifespan(_app: object) -> AsyncIterator[None]:
     """Manage server lifecycle for proper startup and shutdown."""
     global _server_initialized
     logger.info("FastMCP server starting up...")
@@ -56,7 +61,7 @@ async def lifespan(_app):
             _server_initialized = False
 
 
-def create_server() -> tuple[FastMCP, dict]:
+def create_server() -> tuple[FastMCP, dict[str, Any]]:
     """Create and configure the FastMCP server.
 
     Returns:
@@ -92,7 +97,7 @@ def create_server() -> tuple[FastMCP, dict]:
         logger.info("FastMCP server instance created successfully")
 
         # Add health check endpoints for HTTP mode
-        @mcp.custom_route("/health", methods=["GET"])
+        @mcp.custom_route("/health", methods=["GET"])  # type: ignore[misc]
         async def health_check(_request: Request) -> JSONResponse:
             return JSONResponse(
                 {
@@ -103,7 +108,7 @@ def create_server() -> tuple[FastMCP, dict]:
                 }
             )
 
-        @mcp.custom_route("/healthz", methods=["GET"])
+        @mcp.custom_route("/healthz", methods=["GET"])  # type: ignore[misc]
         async def health_check_z(_request: Request) -> JSONResponse:
             return JSONResponse(
                 {
@@ -162,7 +167,7 @@ def create_server() -> tuple[FastMCP, dict]:
         raise
 
 
-def register_prompts(mcp: FastMCP):
+def register_prompts(mcp: FastMCP) -> None:
     """Register prompts with the FastMCP server for MCP inspector visibility.
 
     Args:
@@ -171,38 +176,12 @@ def register_prompts(mcp: FastMCP):
     try:
         logger.info("Starting prompt registration")
 
-        @mcp.prompt
+        @mcp.prompt  # type: ignore[misc]
         def grouping_system_prompt() -> str:
-            """System prompt for LLM file grouping into logical PR units."""
-            return """You are an expert software engineer who groups code changes into logical, atomic Pull Requests.
+            """Enhanced system prompt for intelligent PR grouping with file analysis and constraints."""
+            return get_enhanced_grouping_system_prompt()
 
-GOAL: Group the given files into the OPTIMAL number of logical PR units based on their relationships.
-
-PRINCIPLES:
-- Each PR should be atomic (one logical change)
-- Related files should be grouped together
-- Large config changes (like poetry.lock) should be separate
-- Don't create PRs for files with no actual changes unless they're part of a logical group
-- Group by functional relationship, not just directory
-- Create as many or as few PRs as makes sense for the changes
-
-RESPOND in this JSON format:
-{
-  "groups": [
-    {
-      "id": "descriptive_group_name",
-      "files": ["file1.py", "file2.py"],
-      "category": "feature|config|test|docs|chore",
-      "reasoning": "Why these files belong together",
-      "confidence": 0.0-1.0
-    }
-  ],
-  "rationale": "Overall explanation of the grouping strategy"
-}
-
-IMPORTANT: The number of groups should be whatever makes logical sense - could be 1 PR or 10 PRs depending on the changes."""
-
-        @mcp.prompt
+        @mcp.prompt  # type: ignore[misc]
         def grouping_user_prompt(
             files_count: int,
             files_with_changes: int,
@@ -213,24 +192,15 @@ IMPORTANT: The number of groups should be whatever makes logical sense - could b
             summary: str,
         ) -> str:
             """User prompt template for LLM file grouping with dynamic file information."""
-            return f"""Group these {files_count} files into logical Pull Requests:
-
-**Repository Context:**
-- Files with actual changes: {files_with_changes}
-- Files without changes: {files_without_changes}
-- Total line changes: {total_changes:,}
-- Risk level: {risk_level}
-
-**Files to group:**
-{file_list}
-
-**Additional Context:**
-{summary}
-
-**Key Question:** Should files without changes be grouped with related files that DO have changes,
-    or should they be in separate cleanup PRs?
-
-Please group these files into the optimal number of logical, atomic Pull Requests."""
+            return get_grouping_user_prompt(
+                files_count,
+                files_with_changes,
+                files_without_changes,
+                total_changes,
+                risk_level,
+                file_list,
+                summary,
+            )
 
         logger.info("Prompt registration completed successfully")
 
@@ -240,7 +210,7 @@ Please group these files into the optimal number of logical, atomic Pull Request
         raise
 
 
-def register_tools(mcp: FastMCP):
+def register_tools(mcp: FastMCP) -> None:
     """Register all tools with the FastMCP server.
 
     Args:
@@ -254,7 +224,7 @@ def register_tools(mcp: FastMCP):
         from fastmcp import Context
         from pydantic import Field
 
-        @mcp.tool()
+        @mcp.tool()  # type: ignore[misc]
         async def generate_pr_recommendations(
             ctx: Context,
             analysis_data: dict[str, Any] = Field(
@@ -270,14 +240,14 @@ def register_tools(mcp: FastMCP):
             """Generate PR recommendations from git analysis data."""
             await ctx.info(f"Generating PR recommendations using {strategy} strategy")
             try:
-                return await mcp.pr_generator.generate_recommendations(
+                return await mcp.pr_generator.generate_recommendations(  # type: ignore[no-any-return]
                     analysis_data, strategy, max_files_per_pr
                 )
             except Exception as e:
                 await ctx.error(f"Failed to generate PR recommendations: {str(e)}")
                 return {"error": f"Failed to generate recommendations: {str(e)}"}
 
-        @mcp.tool()
+        @mcp.tool()  # type: ignore[misc]
         async def analyze_pr_feasibility(
             ctx: Context,
             pr_recommendation: dict[str, Any] = Field(
@@ -287,26 +257,26 @@ def register_tools(mcp: FastMCP):
             """Analyze the feasibility and risks of a specific PR recommendation."""
             await ctx.info("Analyzing PR feasibility")
             try:
-                return await mcp.feasibility_analyzer.analyze_feasibility(
+                return await mcp.feasibility_analyzer.analyze_feasibility(  # type: ignore[no-any-return]
                     pr_recommendation
                 )
             except Exception as e:
                 await ctx.error(f"Failed to analyze PR feasibility: {str(e)}")
                 return {"error": f"Failed to analyze feasibility: {str(e)}"}
 
-        @mcp.tool()
+        @mcp.tool()  # type: ignore[misc]
         async def get_strategy_options(
             ctx: Context,
         ) -> dict[str, Any]:
             """Get available PR grouping strategies and their descriptions."""
             await ctx.info("Retrieving available strategies")
             try:
-                return await mcp.strategy_manager.get_strategies()
+                return await mcp.strategy_manager.get_strategies()  # type: ignore[no-any-return]
             except Exception as e:
                 await ctx.error(f"Failed to get strategy options: {str(e)}")
                 return {"error": f"Failed to get strategies: {str(e)}"}
 
-        @mcp.tool()
+        @mcp.tool()  # type: ignore[misc]
         async def validate_pr_recommendations(
             ctx: Context,
             recommendations: list[dict[str, Any]] = Field(
@@ -316,7 +286,7 @@ def register_tools(mcp: FastMCP):
             """Validate a set of PR recommendations for completeness and atomicity."""
             await ctx.info(f"Validating {len(recommendations)} PR recommendations")
             try:
-                return await mcp.validator.validate_recommendations(recommendations)
+                return await mcp.validator.validate_recommendations(recommendations)  # type: ignore[no-any-return]
             except Exception as e:
                 await ctx.error(f"Failed to validate PR recommendations: {str(e)}")
                 return {"error": f"Failed to validate recommendations: {str(e)}"}
@@ -329,7 +299,7 @@ def register_tools(mcp: FastMCP):
         raise
 
 
-async def run_stdio_server():
+async def run_stdio_server() -> None:
     """Run the server in STDIO mode for direct MCP client connections."""
     try:
         logger.info("=== Starting PR Recommender (STDIO) ===")
@@ -363,7 +333,7 @@ async def run_stdio_server():
             logger.info("Starting FastMCP server in stdio mode...")
             logger.info("Server is ready to receive MCP messages")
             # Use run_async instead of run for better async handling
-            await mcp.run_async(transport="stdio")
+            await mcp.run_stdio_async()
         except (BrokenPipeError, EOFError) as e:
             # Handle stdio stream closure gracefully
             logger.info(
@@ -389,7 +359,7 @@ async def run_stdio_server():
 
 def run_http_server(
     host: str = "127.0.0.1", port: int = 9071, transport: str = "streamable-http"
-):
+) -> None:
     """Run the server in HTTP mode for MCP Gateway integration."""
     logger.info("=== Starting PR Recommender (HTTP) ===")
     logger.info(f"🌐 Transport: {transport}")
@@ -434,7 +404,7 @@ def run_http_server(
         sys.exit(1)
 
 
-def setup_logging(log_level: str = "INFO"):
+def setup_logging(log_level: str = "INFO") -> None:
     """Configure logging level."""
     # Your existing logging setup through logging_service should handle this
     # Just ensure the level is properly set
@@ -444,8 +414,8 @@ def setup_logging(log_level: str = "INFO"):
     logging.getLogger().setLevel(level)
 
 
-def main():
-    """Main entry point with command line argument parsing."""
+def main() -> None:
+    """Run the main entry point with command line argument parsing."""
     parser = argparse.ArgumentParser(description="MCP PR Recommender Server")
     parser.add_argument(
         "--transport",

@@ -1,5 +1,4 @@
 """Strategy management tool."""
-
 import logging
 from typing import Any
 
@@ -9,12 +8,12 @@ from mcp_pr_recommender.config import settings
 class StrategyManagerTool:
     """Tool for managing PR grouping strategies."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize strategy manager tool with logging."""
         self.logger = logging.getLogger(__name__)
 
     async def get_strategies(self) -> dict[str, Any]:
         """Get available PR grouping strategies and their descriptions."""
-
         self.logger.info("Retrieving available strategies")
 
         strategies = {
@@ -105,7 +104,6 @@ class StrategyManagerTool:
 
     def _get_strategy_recommendations(self) -> dict[str, str]:
         """Get recommendations for when to use each strategy."""
-
         return {
             "small_changes": "Use 'directory' or 'size' for changes under 10 files",
             "large_refactoring": "Use 'dependency' or 'hybrid' for structural changes",

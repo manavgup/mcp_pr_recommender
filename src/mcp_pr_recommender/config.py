@@ -1,10 +1,9 @@
 """Configuration for PR recommender."""
-
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class PRRecommenderSettings(BaseSettings):
+class PRRecommenderSettings(BaseSettings):  # type: ignore[misc]
     """PR recommender configuration."""
 
     model_config = SettingsConfigDict(

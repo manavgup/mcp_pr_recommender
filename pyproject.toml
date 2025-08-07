@@ -24,7 +24,8 @@ typing-extensions = "^4.8.0"
 pathlib = "^1.0.1"
 click = "^8.1.7"
 openai = "^1.0.0"
-mcp-shared-lib = {git = "https://github.com/manavgup/mcp_shared_lib.git"}
+mcp-shared-lib = {path = "../mcp_shared_lib", develop = true}
+pydantic-settings = "^2.10.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.3"
@@ -54,7 +55,8 @@ commitizen = "^3.13.0"
 interrogate = "^1.5.0"
 types-pyyaml = "^6.0.12.20250516"
 types-requests = "^2.31.0"
-mcp-shared-lib = {git = "https://github.com/manavgup/mcp_shared_lib.git"}
+mcp-shared-lib = {path = "../mcp_shared_lib"}
+pydocstyle = "^6.3.0"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.5.3"

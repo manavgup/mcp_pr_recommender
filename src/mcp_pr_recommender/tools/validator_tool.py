@@ -1,5 +1,4 @@
 """PR recommendation validation tool."""
-
 import logging
 from collections import defaultdict
 from typing import Any
@@ -10,7 +9,8 @@ from mcp_pr_recommender.config import settings
 class ValidatorTool:
     """Tool for validating PR recommendations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize validator tool with logging."""
         self.logger = logging.getLogger(__name__)
 
     async def validate_recommendations(
@@ -18,10 +18,9 @@ class ValidatorTool:
         recommendations: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """Validate a set of PR recommendations for completeness and atomicity."""
-
         self.logger.info(f"Validating {len(recommendations)} PR recommendations")
 
-        validation_results = {
+        validation_results: dict[str, Any] = {
             "overall_valid": True,
             "recommendations_analysis": [],
             "coverage_analysis": {},
@@ -32,8 +31,8 @@ class ValidatorTool:
 
         try:
             # Track all files across recommendations
-            all_files = set()
-            file_to_pr_map = defaultdict(list)
+            all_files: set[str] = set()
+            file_to_pr_map: dict[str, list[str]] = defaultdict(list)
 
             # Validate each recommendation individually
             for i, rec in enumerate(recommendations):
@@ -84,7 +83,6 @@ class ValidatorTool:
         self, rec: dict[str, Any], index: int
     ) -> dict[str, Any]:
         """Validate a single PR recommendation."""
-
         rec_analysis = {
             "id": rec.get("id", f"rec_{index}"),
             "valid": True,
@@ -152,11 +150,10 @@ class ValidatorTool:
     def _analyze_coverage(
         self,
         recommendations: list[dict[str, Any]],
-        all_files: set,
-        file_to_pr_map: dict,
+        all_files: set[str],
+        file_to_pr_map: dict[str, list[str]],
     ) -> dict[str, Any]:
         """Analyze file coverage across recommendations."""
-
         return {
             "total_files_covered": len(all_files),
             "total_recommendations": len(recommendations),
@@ -181,9 +178,10 @@ class ValidatorTool:
             ],
         }
 
-    def _analyze_conflicts(self, file_to_pr_map: dict) -> dict[str, Any]:
+    def _analyze_conflicts(
+        self, file_to_pr_map: dict[str, list[str]]
+    ) -> dict[str, Any]:
         """Analyze potential conflicts between PRs."""
-
         conflicts = []
         for file_path, pr_ids in file_to_pr_map.items():
             if len(pr_ids) > 1:
@@ -207,7 +205,6 @@ class ValidatorTool:
 
     def _analyze_file_coherence(self, files: list[str]) -> dict[str, Any]:
         """Analyze how coherent/related the files in a group are."""
-
         if not files:
             return {"coherence_score": 0.0, "factors": []}
 
@@ -258,7 +255,6 @@ class ValidatorTool:
 
     def _generate_suggestions(self, validation_results: dict[str, Any]) -> list[str]:
         """Generate overall suggestions for improvement."""
-
         suggestions = []
 
         # Coverage suggestions
@@ -296,12 +292,11 @@ class ValidatorTool:
 
     def _calculate_quality_score(self, validation_results: dict[str, Any]) -> float:
         """Calculate overall quality score (0-10)."""
-
         if not validation_results["recommendations_analysis"]:
             return 0.0
 
         # Base score
-        score = 10.0
+        score: float = 10.0
 
         # Deduct for invalid recommendations
         invalid_count = sum(

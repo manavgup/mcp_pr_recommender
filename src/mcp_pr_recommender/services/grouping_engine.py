@@ -17,7 +17,8 @@ from mcp_pr_recommender.services.semantic_analyzer import SemanticAnalyzer
 class GroupingEngine:
     """Simple engine for generating PR recommendations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize grouping engine with analyzer and validator."""
         self.semantic_analyzer = SemanticAnalyzer()
         self.atomicity_validator = AtomicityValidator()
         self.logger = logging.getLogger(__name__)
@@ -26,7 +27,6 @@ class GroupingEngine:
         self, analysis: OutstandingChangesAnalysis, strategy_name: str = "semantic"
     ) -> PRStrategy:
         """Generate PR recommendations from git analysis."""
-
         self.logger.info(
             f"Generating PR recommendations using {strategy_name} strategy"
         )
@@ -42,9 +42,26 @@ class GroupingEngine:
             and settings.enable_llm_analysis
             and strategy_name == "semantic"
         ):
-            refined_groups = await self.semantic_analyzer.refine_groups(
-                initial_groups, analysis
+            # Instead of refine_groups, use the main analysis method
+            file_statuses = [file for group in initial_groups for file in group.files]
+            refined_recommendations = (
+                await self.semantic_analyzer.analyze_and_generate_prs(
+                    file_statuses, analysis
+                )
             )
+            # Convert back to groups for consistency
+            refined_groups = [
+                ChangeGroup(
+                    id=rec.id,
+                    files=[
+                        f for f in analysis.all_changed_files if f.path in rec.files
+                    ],
+                    category=rec.labels[0] if rec.labels else "other",
+                    reasoning=rec.reasoning,
+                    confidence=0.8,
+                )
+                for rec in refined_recommendations
+            ]
             self.logger.info(f"Semantic refinement: {len(refined_groups)} groups")
         else:
             refined_groups = initial_groups
@@ -76,7 +93,6 @@ class GroupingEngine:
 
     def _create_simple_groups(self, files: list[FileStatus]) -> list[ChangeGroup]:
         """Create simple, logical groups - aim for 3-5 total groups."""
-
         # Filter out files that shouldn't be in PRs
         clean_files = [f for f in files if not self._should_exclude_file(f.path)]
         excluded_count = len(files) - len(clean_files)
@@ -213,7 +229,7 @@ class GroupingEngine:
         return any(pattern in path_lower for pattern in exclude_patterns)
 
     def _is_core_source_code(self, path: str) -> bool:
-        """Is this core application source code?"""
+        """Is this core application source code."""
         path_lower = path.lower()
 
         # Source code extensions
@@ -240,7 +256,7 @@ class GroupingEngine:
         )
 
     def _is_project_config(self, path: str) -> bool:
-        """Is this a project configuration file?"""
+        """Is this a project configuration file."""
         filename = Path(path).name.lower()
 
         # Important config files
@@ -269,7 +285,7 @@ class GroupingEngine:
         )
 
     def _is_test_file(self, path: str) -> bool:
-        """Is this a test file?"""
+        """Is this a test file."""
         path_lower = path.lower()
 
         # Test patterns
@@ -283,7 +299,7 @@ class GroupingEngine:
         )
 
     def _is_documentation(self, path: str) -> bool:
-        """Is this a documentation file?"""
+        """Is this a documentation file."""
         path_lower = path.lower()
 
         # Documentation extensions
@@ -301,7 +317,7 @@ class GroupingEngine:
         files = group.files
 
         # Group by directory
-        dir_groups = {}
+        dir_groups: dict[str, list[FileStatus]] = {}
         for file in files:
             parent_dir = str(Path(file.path).parent)
             if parent_dir not in dir_groups:
@@ -330,7 +346,7 @@ class GroupingEngine:
         return split_groups
 
     def _validate_groups(self, groups: list[ChangeGroup]) -> list[ChangeGroup]:
-        """Simple validation - only split if really necessary."""
+        """Validate groups - only split if really necessary."""
         validated_groups = []
 
         for group in groups:
@@ -350,7 +366,6 @@ class GroupingEngine:
         self, groups: list[ChangeGroup], analysis: OutstandingChangesAnalysis
     ) -> list[PRRecommendation]:
         """Convert groups to PR recommendations with better titles and descriptions."""
-
         pr_recommendations = []
 
         for i, group in enumerate(groups):
@@ -376,9 +391,9 @@ class GroupingEngine:
                 description=description,
                 files=group.file_paths,
                 branch_name=branch_name,
-                priority=priority,
+                priority=priority,  # type: ignore[arg-type]  # str vs Literal["high", "medium", "low"]
                 estimated_review_time=review_time,
-                risk_level=risk_level,
+                risk_level=risk_level,  # type: ignore[arg-type]  # str vs Literal["low", "medium", "high"]
                 reasoning=group.reasoning,
                 dependencies=[],
                 labels=self._generate_labels(group),
@@ -424,7 +439,6 @@ class GroupingEngine:
         self, group: ChangeGroup, _analysis: OutstandingChangesAnalysis
     ) -> str:
         """Generate smart descriptions with real statistics."""
-
         # Calculate real statistics
         total_additions = sum(f.lines_added for f in group.files)
         total_deletions = sum(f.lines_deleted for f in group.files)
@@ -511,7 +525,9 @@ class GroupingEngine:
             clean_id = group.id.replace("_", "-").replace("changes", "").strip("-")
             return f"{category}/{clean_id}"
 
-    def _determine_priority(self, group: ChangeGroup) -> str:
+    def _determine_priority(
+        self, group: ChangeGroup
+    ) -> str:  # Should return Literal types
         """Determine priority based on category and size."""
         if group.category == "feature":
             return "high"
@@ -522,7 +538,7 @@ class GroupingEngine:
 
     def _determine_risk_level(
         self, group: ChangeGroup, total_lines: int, files_count: int
-    ) -> str:
+    ) -> str:  # Should return Literal types
         """Determine risk based on real factors."""
         # High risk: lots of changes OR core files OR config changes
         if total_lines > 1000:
