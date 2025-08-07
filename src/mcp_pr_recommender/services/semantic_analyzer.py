@@ -1,5 +1,4 @@
 """Enhanced semantic analyzer that handles all grouping logic."""
-
 import json
 import logging
 
@@ -8,20 +7,21 @@ from mcp_shared_lib.models import FileStatus, OutstandingChangesAnalysis
 
 from mcp_pr_recommender.config import settings
 from mcp_pr_recommender.models.pr.recommendations import ChangeGroup, PRRecommendation
+from mcp_pr_recommender.prompts import get_enhanced_grouping_system_prompt
 
 
 class SemanticAnalyzer:
     """LLM-powered analyzer that handles all file grouping and PR generation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize semantic analyzer with OpenAI client."""
         self.client = openai.AsyncOpenAI(api_key=settings.openai_api_key)
         self.logger = logging.getLogger(__name__)
 
     async def analyze_and_generate_prs(
         self, files: list[FileStatus], analysis: OutstandingChangesAnalysis
     ) -> list[PRRecommendation]:
-        """Main entry point: analyze files and generate PR recommendations."""
-
+        """Analyze files and generate PR recommendations."""
         self.logger.info(f"Starting LLM-based analysis of {len(files)} files")
 
         # Step 1: Basic filtering only
@@ -43,7 +43,7 @@ class SemanticAnalyzer:
         return pr_recommendations
 
     def _filter_files(self, files: list[FileStatus]) -> list[FileStatus]:
-        """Simple filtering - only exclude obvious junk files."""
+        """Filter files - exclude obvious junk files only."""
         clean_files = []
         excluded_count = 0
 
@@ -80,7 +80,6 @@ class SemanticAnalyzer:
         self, files: list[FileStatus], analysis: OutstandingChangesAnalysis
     ) -> list[ChangeGroup]:
         """Use LLM to intelligently group files into logical PR units."""
-
         # Create the grouping prompt
         prompt = self._create_grouping_prompt(files, analysis)
 
@@ -88,7 +87,10 @@ class SemanticAnalyzer:
             response = await self.client.chat.completions.create(
                 model=settings.openai_model,
                 messages=[
-                    {"role": "system", "content": self._get_grouping_system_prompt()},
+                    {
+                        "role": "system",
+                        "content": get_enhanced_grouping_system_prompt(),
+                    },
                     {"role": "user", "content": prompt},
                 ],
                 max_tokens=settings.max_tokens_per_request
@@ -97,9 +99,12 @@ class SemanticAnalyzer:
             )
 
             # Parse LLM response into groups
-            groups = self._parse_grouping_response(
-                response.choices[0].message.content, files
-            )
+            content = response.choices[0].message.content
+            if content is None:
+                self.logger.warning("LLM returned None content")
+                groups = []
+            else:
+                groups = self._parse_grouping_response(content, files)
 
             if not groups:
                 self.logger.warning(
@@ -113,41 +118,10 @@ class SemanticAnalyzer:
             self.logger.error(f"LLM grouping failed: {e}")
             return self._fallback_grouping(files)
 
-    def _get_grouping_system_prompt(self) -> str:
-        """System prompt for LLM file grouping."""
-        return """You are an expert software engineer who groups code changes into logical, atomic Pull Requests.
-
-GOAL: Group the given files into the OPTIMAL number of logical PR units based on their relationships.
-
-PRINCIPLES:
-- Each PR should be atomic (one logical change)
-- Related files should be grouped together
-- Large config changes (like poetry.lock) should be separate
-- Don't create PRs for files with no actual changes unless they're part of a logical group
-- Group by functional relationship, not just directory
-- Create as many or as few PRs as makes sense for the changes
-
-RESPOND in this JSON format:
-{
-  "groups": [
-    {
-      "id": "descriptive_group_name",
-      "files": ["file1.py", "file2.py"],
-      "category": "feature|config|test|docs|chore",
-      "reasoning": "Why these files belong together",
-      "confidence": 0.0-1.0
-    }
-  ],
-  "rationale": "Overall explanation of the grouping strategy"
-}
-
-IMPORTANT: The number of groups should be whatever makes logical sense - could be 1 PR or 10 PRs depending on the changes."""
-
     def _create_grouping_prompt(
         self, files: list[FileStatus], analysis: OutstandingChangesAnalysis
     ) -> str:
         """Create the prompt for LLM grouping."""
-
         # Prepare file information - prioritize files with actual changes
         files_with_changes = [f for f in files if f.total_changes > 0]
         files_without_changes = [f for f in files if f.total_changes == 0]
@@ -231,7 +205,6 @@ Please group these files into the optimal number of logical, atomic Pull Request
         self, response: str, files: list[FileStatus]
     ) -> list[ChangeGroup]:
         """Parse LLM grouping response into ChangeGroup objects."""
-
         try:
             # Extract JSON from response
             start = response.find("{")
@@ -298,8 +271,7 @@ Please group these files into the optimal number of logical, atomic Pull Request
             return []
 
     def _fallback_grouping(self, files: list[FileStatus]) -> list[ChangeGroup]:
-        """Simple fallback grouping if LLM fails."""
-
+        """Provide fallback grouping if LLM fails."""
         # Separate files with changes from those without
         files_with_changes = [f for f in files if f.total_changes > 0]
         files_without_changes = [f for f in files if f.total_changes == 0]
@@ -388,7 +360,6 @@ Please group these files into the optimal number of logical, atomic Pull Request
         self, groups: list[ChangeGroup], _analysis: OutstandingChangesAnalysis
     ) -> list[PRRecommendation]:
         """Generate PR recommendations from groups."""
-
         recommendations = []
 
         for i, group in enumerate(groups):
@@ -416,9 +387,9 @@ Please group these files into the optimal number of logical, atomic Pull Request
                 description=description,
                 files=group.file_paths,
                 branch_name=self._generate_branch_name(group),
-                priority=priority,
+                priority=priority,  # type: ignore[arg-type]  # str vs Literal["high", "medium", "low"]
                 estimated_review_time=review_time,
-                risk_level=risk_level,
+                risk_level=risk_level,  # type: ignore[arg-type]  # str vs Literal["low", "medium", "high"]
                 reasoning=group.reasoning,
                 dependencies=[],
                 labels=self._generate_labels(group),
@@ -550,8 +521,7 @@ Please group these files into the optimal number of logical, atomic Pull Request
             return "low"
 
     def _determine_risk(self, total_changes: int, files_count: int) -> str:
-        """FIXED: Determine risk level with proper handling for cleanup PRs."""
-
+        """Determine risk level with proper handling for cleanup PRs."""
         # CRITICAL FIX: Files with no actual changes should be low risk
         if total_changes == 0:
             return "low"

@@ -1,5 +1,4 @@
 """PR feasibility analysis tool."""
-
 import logging
 from pathlib import Path
 from typing import Any
@@ -10,7 +9,8 @@ from mcp_pr_recommender.config import settings
 class FeasibilityAnalyzerTool:
     """Tool for analyzing PR feasibility and risks."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize feasibility analyzer tool with logging."""
         self.logger = logging.getLogger(__name__)
 
     async def analyze_feasibility(
@@ -25,7 +25,6 @@ class FeasibilityAnalyzerTool:
         Returns:
             Dict containing feasibility analysis
         """
-
         self.logger.info("Analyzing PR feasibility")
 
         try:
@@ -76,7 +75,6 @@ class FeasibilityAnalyzerTool:
 
     def _categorize_files(self, files: list[str]) -> dict[str, Any]:
         """Categorize files by type and directory."""
-
         file_types = set()
         directories = set()
         extensions = set()
@@ -113,7 +111,6 @@ class FeasibilityAnalyzerTool:
 
     def _analyze_complexity(self, files: list[str]) -> dict[str, Any]:
         """Analyze complexity factors."""
-
         return {
             "file_count": len(files),
             "estimated_review_time_per_file": 10,  # minutes
@@ -133,7 +130,6 @@ class FeasibilityAnalyzerTool:
 
     def _analyze_dependencies(self, files: list[str]) -> dict[str, Any]:
         """Analyze file dependencies."""
-
         # Simple dependency analysis based on file patterns
         has_migration = any("migration" in f.lower() for f in files)
         has_model = any("model" in f.lower() for f in files)
@@ -154,7 +150,6 @@ class FeasibilityAnalyzerTool:
 
     def _check_risk_patterns(self, files: list[str]) -> dict[str, Any]:
         """Check for high-risk file patterns."""
-
         risk_factors = []
         recommendations = []
 
@@ -188,7 +183,6 @@ class FeasibilityAnalyzerTool:
         self, pr_recommendation: dict[str, Any]
     ) -> list[str]:
         """Generate a review checklist based on the PR."""
-
         checklist = [
             "Code follows team style guidelines",
             "All new code has appropriate tests",

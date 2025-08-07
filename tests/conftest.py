@@ -1,102 +1,40 @@
-"""
-Test configuration and fixtures for mcp_pr_recommender.
+"""Test configuration and fixtures for mcp_pr_recommender.
 
 This module provides PR recommender-specific fixtures while importing
 shared fixtures from mcp_shared_lib.
 """
 
+import shutil
+import tempfile
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
 import pytest
-
-# Import shared fixtures from mcp_shared_lib
-# Note: Direct import instead of pytest_plugins due to package structure
-try:
-    import sys
-    from pathlib import Path
-
-    # Add the mcp_shared_lib tests directory to the path
-    shared_lib_tests_path = (
-        Path(__file__).parent.parent.parent / "mcp_shared_lib" / "tests"
-    )
-    if shared_lib_tests_path.exists():
-        sys.path.insert(0, str(shared_lib_tests_path))
-        # Import specific fixtures instead of using wildcard import
-        try:
-            from conftest import (
-                sample_config,
-                temp_dir,
-                mock_git_client,
-                mock_change_detector,
-                mock_risk_assessor,
-                sample_repository_state,
-                mock_file_analyzer,
-            )
-        except ImportError:
-            # Fallback to local definitions
-            pass
-    else:
-        # Fallback: define essential fixtures locally
-        @pytest.fixture
-        def sample_config():
-            return {
-                "git_client": {"timeout": 30},
-                "analyzer": {"scan_depth": 10},
-            }
-
-        @pytest.fixture
-        def temp_dir():
-            import shutil
-            import tempfile
-
-            temp_dir = Path(tempfile.mkdtemp(prefix="test_"))
-            yield temp_dir
-            shutil.rmtree(temp_dir, ignore_errors=True)
-
-except ImportError:
-    # Fallback: define essential fixtures locally
-    @pytest.fixture
-    def sample_config():
-        return {
-            "git_client": {"timeout": 30},
-            "analyzer": {"scan_depth": 10},
-        }
-
-    @pytest.fixture
-    def temp_dir():
-        import shutil
-        import tempfile
-
-        temp_dir = Path(tempfile.mkdtemp(prefix="test_"))
-        yield temp_dir
-        shutil.rmtree(temp_dir, ignore_errors=True)
+from mcp_shared_lib.test_utils.factories import FileChangeFactory, create_file_changes
 
 
-# TODO: [MCP monorepo] This import relies on PYTHONPATH including the monorepo root so that
-# mcp_shared_lib.test_utils.factories is importable. This is a short-term workaround.
-# Best practice is to move shared test utilities into a real subpackage under src/ (e.g., mcp_shared_lib.test_utils)
-# and import from there. Refactor this when possible.
-try:
-    from mcp_shared_lib.test_utils.factories import (
-        FileChangeFactory,
-        create_file_changes,
-    )
-except ImportError:
-    # Fallback: define essential factories locally
-    def create_file_changes(files, **kwargs):
-        return [{"file": f, **kwargs} for f in files]
+@pytest.fixture
+def sample_config():
+    """Provide basic configuration for testing."""
+    return {
+        "git_client": {"timeout": 30},
+        "analyzer": {"scan_depth": 10},
+    }
 
-    class FileChangeFactory:
-        @staticmethod
-        def create(files, **kwargs):
-            return create_file_changes(files, **kwargs)
+
+@pytest.fixture
+def temp_dir():
+    """Temporary directory fixture."""
+    temp_dir = Path(tempfile.mkdtemp(prefix="test_"))
+    yield temp_dir
+    shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 @pytest.fixture
 def pr_recommender_config(sample_config):
-    """Extended configuration specific to the PR recommender."""
+    """Provide extended configuration specific to the PR recommender."""
     config = sample_config.copy()
     config.update(
         {
@@ -374,7 +312,7 @@ def sample_change_analysis():
 
 @pytest.fixture
 def expected_pr_recommendations():
-    """Expected PR recommendations for testing."""
+    """Provide expected PR recommendations for testing."""
     return [
         {
             "title": "Add core authentication functionality",
@@ -567,7 +505,7 @@ This PR implements a comprehensive user authentication system including:
 
 @pytest.fixture
 def recommendation_validation_rules():
-    """Validation rules for PR recommendations."""
+    """Provide validation rules for PR recommendations."""
     return {
         "max_files_per_pr": 15,
         "min_files_per_pr": 1,
@@ -708,92 +646,44 @@ def mock_analyzer_client():
     return client
 
 
-# Utility functions for PR recommender testing
-def create_test_file_group(
-    name: str, files: list[str], **kwargs: Any
-) -> dict[str, Any]:
-    """Create a test file group."""
-    defaults: dict[str, Any] = {
-        "group_id": name.lower().replace(" ", "_"),
-        "name": name,
-        "files": files,
-        "cohesion_score": 0.8,
-        "estimated_size": "medium",
-        "risk_level": "medium",
-        "description": f"{name} related changes",
+@pytest.fixture
+def mock_semantic_analyzer():
+    """Mock semantic analyzer for understanding file content."""
+    analyzer = Mock()
+
+    # Semantic similarity
+    def mock_semantic_similarity(content1, content2):
+        # Mock realistic semantic similarities
+        if "auth" in content1.lower() and "auth" in content2.lower():
+            return 0.9
+        elif "model" in content1.lower() and "model" in content2.lower():
+            return 0.85
+        elif "test" in content1.lower() and "test" in content2.lower():
+            return 0.7
+        else:
+            return 0.3
+
+    analyzer.calculate_semantic_similarity.side_effect = mock_semantic_similarity
+
+    # Content categorization
+    analyzer.categorize_content.return_value = {
+        "primary_category": "business_logic",
+        "secondary_categories": ["authentication", "validation"],
+        "confidence": 0.85,
+        "keywords": ["login", "user", "session", "validate"],
     }
-    defaults.update(kwargs)
-    return defaults
 
-
-def create_recommendation_test_case(
-    title: str, files: list[str], **kwargs: Any
-) -> dict[str, Any]:
-    """Create a recommendation test case."""
-    defaults: dict[str, Any] = {
-        "title": title,
-        "files": files,
-        "estimated_size": "medium",
-        "priority": "medium",
-        "risk_level": "medium",
-        "confidence": 0.8,
-        "description": f"Implements {title.lower()}",
-        "labels": ["feature"],
+    # Impact analysis
+    analyzer.analyze_impact.return_value = {
+        "scope": "module",
+        "affected_components": ["auth_service", "user_controller"],
+        "breaking_changes": False,
+        "api_changes": True,
     }
-    defaults.update(kwargs)
-    return defaults
+
+    return analyzer
 
 
-def assert_recommendation_valid(recommendation: dict[str, Any], rules: dict[str, Any]):
-    """Assert that a recommendation meets validation rules."""
-    # Check required fields
-    for field in rules.get("required_fields", []):
-        assert field in recommendation, f"Missing required field: {field}"
-
-    # Check file count limits
-    file_count = len(recommendation.get("files", []))
-    assert file_count >= rules.get(
-        "min_files_per_pr", 1
-    ), f"Too few files: {file_count}"
-    assert file_count <= rules.get(
-        "max_files_per_pr", 100
-    ), f"Too many files: {file_count}"
-
-    # Check valid enum values
-    if "estimated_size" in recommendation:
-        valid_sizes = rules.get("valid_sizes", [])
-        if valid_sizes:
-            assert (
-                recommendation["estimated_size"] in valid_sizes
-            ), f"Invalid size: {recommendation['estimated_size']}"
-
-    if "priority" in recommendation:
-        valid_priorities = rules.get("valid_priorities", [])
-        if valid_priorities:
-            assert (
-                recommendation["priority"] in valid_priorities
-            ), f"Invalid priority: {recommendation['priority']}"
-
-
-@pytest.fixture
-def recommendation_validator():
-    """Validator function for recommendations."""
-    return assert_recommendation_valid
-
-
-@pytest.fixture
-def file_group_factory():
-    """Factory function for creating file groups."""
-    return create_test_file_group
-
-
-@pytest.fixture
-def recommendation_factory():
-    """Factory function for creating recommendation test cases."""
-    return create_recommendation_test_case
-
-
-# Test data for edge cases and error scenarios
 @pytest.fixture
 def edge_case_scenarios():
     """Edge case scenarios for testing."""
@@ -877,7 +767,6 @@ def performance_test_data():
     }
 
 
-# Integration test scenarios
 @pytest.fixture
 def integration_test_workflows():
     """Complete workflow scenarios for integration testing."""
@@ -925,42 +814,89 @@ def integration_test_workflows():
     }
 
 
+# Utility functions for PR recommender testing
+def create_test_file_group(
+    name: str, files: list[str], **kwargs: Any
+) -> dict[str, Any]:
+    """Create a test file group."""
+    defaults: dict[str, Any] = {
+        "group_id": name.lower().replace(" ", "_"),
+        "name": name,
+        "files": files,
+        "cohesion_score": 0.8,
+        "estimated_size": "medium",
+        "risk_level": "medium",
+        "description": f"{name} related changes",
+    }
+    defaults.update(kwargs)
+    return defaults
+
+
+def create_recommendation_test_case(
+    title: str, files: list[str], **kwargs: Any
+) -> dict[str, Any]:
+    """Create a recommendation test case."""
+    defaults: dict[str, Any] = {
+        "title": title,
+        "files": files,
+        "estimated_size": "medium",
+        "priority": "medium",
+        "risk_level": "medium",
+        "confidence": 0.8,
+        "description": f"Implements {title.lower()}",
+        "labels": ["feature"],
+    }
+    defaults.update(kwargs)
+    return defaults
+
+
+def assert_recommendation_valid(recommendation: dict[str, Any], rules: dict[str, Any]):
+    """Assert that a recommendation meets validation rules."""
+    # Check required fields
+    for field in rules.get("required_fields", []):
+        assert field in recommendation, f"Missing required field: {field}"
+
+    # Check file count limits
+    file_count = len(recommendation.get("files", []))
+    assert file_count >= rules.get(
+        "min_files_per_pr", 1
+    ), f"Too few files: {file_count}"
+    assert file_count <= rules.get(
+        "max_files_per_pr", 100
+    ), f"Too many files: {file_count}"
+
+    # Check valid enum values
+    if "estimated_size" in recommendation:
+        valid_sizes = rules.get("valid_sizes", [])
+        if valid_sizes:
+            assert (
+                recommendation["estimated_size"] in valid_sizes
+            ), f"Invalid size: {recommendation['estimated_size']}"
+
+    if "priority" in recommendation:
+        valid_priorities = rules.get("valid_priorities", [])
+        if valid_priorities:
+            assert (
+                recommendation["priority"] in valid_priorities
+            ), f"Invalid priority: {recommendation['priority']}"
+
+
 @pytest.fixture
-def mock_semantic_analyzer():
-    """Mock semantic analyzer for understanding file content."""
-    analyzer = Mock()
+def recommendation_validator():
+    """Provide validator function for recommendations."""
+    return assert_recommendation_valid
 
-    # Semantic similarity
-    def mock_semantic_similarity(content1, content2):
-        # Mock realistic semantic similarities
-        if "auth" in content1.lower() and "auth" in content2.lower():
-            return 0.9
-        elif "model" in content1.lower() and "model" in content2.lower():
-            return 0.85
-        elif "test" in content1.lower() and "test" in content2.lower():
-            return 0.7
-        else:
-            return 0.3
 
-    analyzer.calculate_semantic_similarity.side_effect = mock_semantic_similarity
+@pytest.fixture
+def file_group_factory():
+    """Create factory function for creating file groups."""
+    return create_test_file_group
 
-    # Content categorization
-    analyzer.categorize_content.return_value = {
-        "primary_category": "business_logic",
-        "secondary_categories": ["authentication", "validation"],
-        "confidence": 0.85,
-        "keywords": ["login", "user", "session", "validate"],
-    }
 
-    # Impact analysis
-    analyzer.analyze_impact.return_value = {
-        "scope": "module",
-        "affected_components": ["auth_service", "user_controller"],
-        "breaking_changes": False,
-        "api_changes": True,
-    }
-
-    return analyzer
+@pytest.fixture
+def recommendation_factory():
+    """Create factory function for creating recommendation test cases."""
+    return create_recommendation_test_case
 
 
 # Make all fixtures available for import

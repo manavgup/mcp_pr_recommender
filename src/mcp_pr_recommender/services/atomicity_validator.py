@@ -1,5 +1,4 @@
 """Validates that PR groups are atomic and can stand alone."""
-
 import logging
 from pathlib import Path
 
@@ -10,12 +9,12 @@ from mcp_pr_recommender.models.pr.recommendations import ChangeGroup
 class AtomicityValidator:
     """Validates and ensures PR groups are atomic."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize atomicity validator with logging."""
         self.logger = logging.getLogger(__name__)
 
     def validate_and_split(self, groups: list[ChangeGroup]) -> list[ChangeGroup]:
         """Validate groups and split if necessary for atomicity."""
-
         self.logger.info("Starting atomicity validation")
 
         validated_groups = []
@@ -35,7 +34,6 @@ class AtomicityValidator:
 
     def _is_atomic(self, group: ChangeGroup) -> bool:
         """Check if a group represents an atomic change."""
-
         # Size constraints
         if len(group.files) > settings.max_files_per_pr:
             self.logger.debug(f"Group {group.id} too large: {len(group.files)} files")
@@ -61,7 +59,6 @@ class AtomicityValidator:
 
     def _has_mixed_concerns(self, group: ChangeGroup) -> bool:
         """Check if group mixes different concerns."""
-
         file_types = set()
         directories = set()
 
@@ -99,7 +96,6 @@ class AtomicityValidator:
 
     def _has_circular_dependencies(self, group: ChangeGroup) -> bool:
         """Check for circular dependencies (simplified)."""
-
         # For now, just check for known problematic patterns
         file_paths = [f.path for f in group.files]
 
@@ -128,7 +124,6 @@ class AtomicityValidator:
 
     def _split_group(self, group: ChangeGroup) -> list[ChangeGroup]:
         """Split a group that's not atomic."""
-
         self.logger.info(f"Splitting group {group.id} with {len(group.files)} files")
 
         # Strategy 1: Split by directory
@@ -144,8 +139,7 @@ class AtomicityValidator:
 
     def _split_by_directory(self, group: ChangeGroup) -> list[ChangeGroup]:
         """Split group by directory structure."""
-
-        dir_groups = {}
+        dir_groups: dict[str, list[object]] = {}
 
         for file in group.files:
             dir_path = str(Path(file.path).parent)
@@ -170,8 +164,13 @@ class AtomicityValidator:
 
     def _split_by_concern(self, group: ChangeGroup) -> list[ChangeGroup]:
         """Split group by separating different concerns."""
-
-        concerns = {"source": [], "test": [], "config": [], "docs": [], "other": []}
+        concerns: dict[str, list[object]] = {
+            "source": [],
+            "test": [],
+            "config": [],
+            "docs": [],
+            "other": [],
+        }
 
         for file in group.files:
             path = Path(file.path)
@@ -206,7 +205,6 @@ class AtomicityValidator:
 
     def _split_by_size(self, group: ChangeGroup) -> list[ChangeGroup]:
         """Split group by size when it's too large."""
-
         files = group.files
         max_files = settings.max_files_per_pr
 

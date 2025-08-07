@@ -1,8 +1,7 @@
-import pytest
-
 """
 Example test file for mcp_pr_recommender.
 """
+import pytest
 
 
 class TestExample:

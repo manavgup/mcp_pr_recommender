@@ -10,12 +10,12 @@ strategies:
     llm_model: "gpt-4"
     temperature: 0.3
     prompt_template: "semantic_grouping_v1"
-  
+
   directory_based:
     enabled: true
     max_depth: 3
     min_files_per_dir: 2
-  
+
   dependency_analysis:
     enabled: true
     languages:
@@ -28,11 +28,11 @@ validation_rules:
     enabled: true
     max_files: 50
     max_size_mb: 100
-  
+
   conflict_check:
     enabled: true
     check_dependencies: true
-  
+
   test_coverage:
     enabled: true
     require_tests: true

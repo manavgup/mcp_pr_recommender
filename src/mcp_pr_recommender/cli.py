@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-CLI module for mcp_pr_recommender
-"""
-
+"""CLI module for mcp_pr_recommender."""
 import argparse
 import os
 import sys
@@ -17,7 +14,7 @@ logger = logging_service.get_logger(__name__)
 
 
 def check_environment() -> None:
-    """Check if required environment variables are set"""
+    """Check if required environment variables are set."""
     required_env = {"OPENAI_API_KEY": "OpenAI API key for LLM operations"}
 
     missing = []
@@ -37,7 +34,7 @@ def check_environment() -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command line arguments"""
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description="MCP PR Recommender Server",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -70,8 +67,8 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main():
-    """Main CLI entry point"""
+def main() -> None:
+    """Run the main CLI entry point."""
     args = parse_args()
 
     # Check environment unless skipped

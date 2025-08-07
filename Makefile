@@ -11,7 +11,7 @@
 # ──────────────────────────────────────────────────────────────────────────
 # Project variables
 PROJECT_NAME      = mcp-pr-recommender
-PACKAGE_NAME      = pr_recommender
+PACKAGE_NAME      = mcp_pr_recommender
 DOCS_DIR          = docs
 HANDSDOWN_PARAMS  = -o $(DOCS_DIR)/ -n $(PACKAGE_NAME) --name "MCP PR Recommender" --cleanup
 

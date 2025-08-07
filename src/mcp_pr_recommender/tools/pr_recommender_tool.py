@@ -15,7 +15,8 @@ from mcp_pr_recommender.services.semantic_analyzer import SemanticAnalyzer
 class PRRecommenderTool:
     """Tool for generating PR recommendations from git analysis."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize PR recommender tool with semantic analyzer."""
         self.semantic_analyzer = SemanticAnalyzer()
         self.logger = logging.getLogger(__name__)
 
@@ -40,13 +41,41 @@ class PRRecommenderTool:
         )
 
         try:
+            # Handle MCP response format - extract structuredContent if present
+            actual_data = analysis_data
+            if "structuredContent" in analysis_data:
+                self.logger.info("Extracting data from MCP structuredContent wrapper")
+                actual_data = analysis_data["structuredContent"]
+            elif (
+                "content" in analysis_data and "repository_status" not in analysis_data
+            ):
+                self.logger.warning(
+                    "Received content wrapper without structuredContent"
+                )
+                # Try to parse JSON from content if needed
+                if (
+                    isinstance(analysis_data["content"], list)
+                    and len(analysis_data["content"]) > 0
+                ):
+                    content_item = analysis_data["content"][0]
+                    if content_item.get("type") == "text":
+                        import json
+
+                        try:
+                            actual_data = json.loads(content_item["text"])
+                            self.logger.info(
+                                "Successfully parsed JSON from content text"
+                            )
+                        except json.JSONDecodeError:
+                            self.logger.error("Failed to parse JSON from content text")
+
             # ENHANCED: Extract all file types properly from analysis_data
-            all_files = self._extract_all_files(analysis_data)
+            all_files = self._extract_all_files(actual_data)
 
             self.logger.info(f"Analyzing {len(all_files)} changed files")
 
             # Enhanced file type breakdown for debugging
-            file_type_counts = {}
+            file_type_counts: dict[str, int] = {}
             files_with_changes = 0
             total_lines_changed = 0
 
@@ -73,7 +102,7 @@ class PRRecommenderTool:
 
             # Create OutstandingChangesAnalysis object with proper data
             analysis: OutstandingChangesAnalysis = self._create_analysis_object(
-                analysis_data, all_files
+                actual_data, all_files
             )
 
             # Generate recommendations using semantic analyzer directly
@@ -163,7 +192,7 @@ class PRRecommenderTool:
 
     def _analyze_file_types(self, all_files: list[FileStatus]) -> dict[str, int]:
         """Analyze file type breakdown."""
-        file_type_counts = {}
+        file_type_counts: dict[str, int] = {}
         for f in all_files:
             file_type = f.file_type  # Use the property!
             file_type_counts[file_type] = file_type_counts.get(file_type, 0) + 1
@@ -217,7 +246,6 @@ class PRRecommenderTool:
 
     def _create_file_status(self, file_data: dict[str, Any]) -> FileStatus:
         """Create a FileStatus object from file data dict."""
-
         file_status = FileStatus(
             path=file_data["path"],
             status_code=file_data.get("status_code", file_data.get("status", "?")),
