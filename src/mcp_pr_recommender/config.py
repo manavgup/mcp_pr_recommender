@@ -42,5 +42,27 @@ class PRRecommenderSettings(BaseSettings):  # type: ignore[misc]
     log_level: str = Field(default="INFO", description="Log level")
 
 
-# Global settings instance
-settings = PRRecommenderSettings()
+# Global settings instance - lazy loaded to avoid requiring API key at import time
+_settings_instance = None
+
+
+def get_settings() -> PRRecommenderSettings:
+    """Get the global settings instance, creating it if necessary."""
+    global _settings_instance
+    if _settings_instance is None:
+        _settings_instance = PRRecommenderSettings()
+    return _settings_instance
+
+
+# For backward compatibility
+class PRRecommenderConfig:
+    """Compatibility class for accessing settings."""
+
+    @staticmethod
+    def get_settings() -> PRRecommenderSettings:
+        """Get settings instance."""
+        return get_settings()
+
+
+# Export settings getter for convenience
+settings = get_settings

@@ -39,7 +39,7 @@ class GroupingEngine:
         # Step 2: Skip semantic analysis if groups are already good
         if (
             len(initial_groups) <= 5
-            and settings.enable_llm_analysis
+            and settings().enable_llm_analysis
             and strategy_name == "semantic"
         ):
             # Instead of refine_groups, use the main analysis method
@@ -85,8 +85,8 @@ class GroupingEngine:
                 "final_groups": len(validated_groups),
                 "grouping_strategy": "simple_logical",
                 "settings_used": {
-                    "max_files_per_pr": settings.max_files_per_pr,
-                    "similarity_threshold": settings.similarity_threshold,
+                    "max_files_per_pr": settings().max_files_per_pr,
+                    "similarity_threshold": settings().similarity_threshold,
                 },
             },
         )

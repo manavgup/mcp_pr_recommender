@@ -92,12 +92,12 @@ class StrategyManagerTool:
 
         return {
             "available_strategies": strategies,
-            "default_strategy": settings.default_strategy,
+            "default_strategy": settings().default_strategy,
             "current_settings": {
-                "max_files_per_pr": settings.max_files_per_pr,
-                "min_files_per_pr": settings.min_files_per_pr,
-                "similarity_threshold": settings.similarity_threshold,
-                "enable_llm_analysis": settings.enable_llm_analysis,
+                "max_files_per_pr": settings().max_files_per_pr,
+                "min_files_per_pr": settings().min_files_per_pr,
+                "similarity_threshold": settings().similarity_threshold,
+                "enable_llm_analysis": settings().enable_llm_analysis,
             },
             "recommendations": self._get_strategy_recommendations(),
         }

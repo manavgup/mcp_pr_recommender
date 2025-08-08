@@ -42,7 +42,7 @@ class FeasibilityAnalyzerTool:
             }
 
             # Check file count
-            if len(files) > settings.max_files_per_pr:
+            if len(files) > settings().max_files_per_pr:
                 analysis["risk_factors"].append(f"Large number of files ({len(files)})")
                 analysis["recommendations"].append(
                     "Consider splitting into smaller PRs"

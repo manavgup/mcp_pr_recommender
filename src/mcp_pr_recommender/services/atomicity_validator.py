@@ -35,7 +35,7 @@ class AtomicityValidator:
     def _is_atomic(self, group: ChangeGroup) -> bool:
         """Check if a group represents an atomic change."""
         # Size constraints
-        if len(group.files) > settings.max_files_per_pr:
+        if len(group.files) > settings().max_files_per_pr:
             self.logger.debug(f"Group {group.id} too large: {len(group.files)} files")
             return False
 
@@ -127,7 +127,7 @@ class AtomicityValidator:
         self.logger.info(f"Splitting group {group.id} with {len(group.files)} files")
 
         # Strategy 1: Split by directory
-        if len(group.files) > settings.max_files_per_pr:
+        if len(group.files) > settings().max_files_per_pr:
             return self._split_by_directory(group)
 
         # Strategy 2: Split by file type
@@ -206,7 +206,7 @@ class AtomicityValidator:
     def _split_by_size(self, group: ChangeGroup) -> list[ChangeGroup]:
         """Split group by size when it's too large."""
         files = group.files
-        max_files = settings.max_files_per_pr
+        max_files = settings().max_files_per_pr
 
         split_groups = []
         for i in range(0, len(files), max_files):

@@ -100,14 +100,14 @@ class ValidatorTool:
             rec_analysis["issues"].append("No files in PR")
 
         # Check file count limits
-        if len(files) > settings.max_files_per_pr:
+        if len(files) > settings().max_files_per_pr:
             rec_analysis["valid"] = False
             rec_analysis["issues"].append(
-                f"Too many files ({len(files)} > {settings.max_files_per_pr})"
+                f"Too many files ({len(files)} > {settings().max_files_per_pr})"
             )
             rec_analysis["suggestions"].append("Split into smaller PRs")
 
-        if len(files) < settings.min_files_per_pr and len(files) > 0:
+        if len(files) < settings().min_files_per_pr and len(files) > 0:
             rec_analysis["warnings"].append(f"Very small PR ({len(files)} files)")
 
         # Check required fields

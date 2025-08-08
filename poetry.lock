@@ -1779,7 +1779,7 @@ description = "Shared library for MCP components providing common utilities, mod
 optional = false
 python-versions = "^3.10"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 fastapi = "^0.116.1"
@@ -1791,8 +1791,10 @@ typing-extensions = "^4.8.0"
 uvicorn = "^0.35.0"
 
 [package.source]
-type = "directory"
-url = "../mcp_shared_lib"
+type = "git"
+url = "https://github.com/manavgup/mcp_shared_lib.git"
+reference = "master"
+resolved_reference = "ed86ba158267af37be5899965618e8ccadb1305e"
 
 [[package]]
 name = "mdurl"
@@ -4029,4 +4031,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "3ce15421aa80d42f78a0aff9295bd5672b620e66e0e9a00375c991ef7c1e4a8d"
+content-hash = "5260f099ad147c983d0a823f08d0689277a41908de912f6693736c57f4253a5e"

@@ -15,7 +15,7 @@ class SemanticAnalyzer:
 
     def __init__(self) -> None:
         """Initialize semantic analyzer with OpenAI client."""
-        self.client = openai.AsyncOpenAI(api_key=settings.openai_api_key)
+        self.client = openai.AsyncOpenAI(api_key=settings().openai_api_key)
         self.logger = logging.getLogger(__name__)
 
     async def analyze_and_generate_prs(
@@ -85,7 +85,7 @@ class SemanticAnalyzer:
 
         try:
             response = await self.client.chat.completions.create(
-                model=settings.openai_model,
+                model=settings().openai_model,
                 messages=[
                     {
                         "role": "system",
@@ -93,7 +93,7 @@ class SemanticAnalyzer:
                     },
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=settings.max_tokens_per_request
+                max_tokens=settings().max_tokens_per_request
                 * 2,  # Need more tokens for grouping
                 temperature=0.1,
             )
