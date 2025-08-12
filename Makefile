@@ -122,11 +122,31 @@ check-env:
 # help: test-all             - Run all tests (unit + integration)
 # help: test-llm             - Run LLM-dependent tests
 # help: test-slow            - Run slow tests
+# help: test-quick            - Run fast tests for development
+# help: dev-setup            - Set up development environment
 # help: test-server          - Test PR recommender with mock data
 # help: test-integration     - Test full integration with local repo analyzer
 # help: test-connection      - Test basic server connection
 
-.PHONY: serve dev run test test-integration test-all test-llm test-slow test-quick
+.PHONY: serve dev run test test-integration test-all test-llm test-slow test-quick dev-setup
+
+test-quick:
+	@if [ -f scripts/test-quick.sh ]; then \
+		./scripts/test-quick.sh; \
+	else \
+		poetry run pytest tests/ -m "unit and not slow and not external" -v; \
+	fi
+
+dev-setup:
+	@if [ -f scripts/dev-setup.sh ]; then \
+		./scripts/dev-setup.sh; \
+	else \
+		echo "Running inline dev setup..."; \
+		poetry install --with test,dev; \
+		poetry run pre-commit install; \
+		poetry run pytest tests/ -m "unit and not slow and not external" -v; \
+		echo "✅ Development environment ready!"; \
+	fi
 
 serve:
 	@echo "🚀 Starting MCP server..."
