@@ -373,7 +373,7 @@ class TestAtomicityValidator:
         assert len(split_groups) == 2  # Two directories
         # Check files are grouped by directory
         for split_group in split_groups:
-            directories = set(str(Path(f.path).parent) for f in split_group.files)
+            directories = {str(Path(f.path).parent) for f in split_group.files}
             assert len(directories) == 1  # All files in same directory
 
     def test_split_by_concern_comprehensive(self, validator):

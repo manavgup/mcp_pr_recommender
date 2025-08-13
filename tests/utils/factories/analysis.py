@@ -6,7 +6,7 @@ risk assessments, quality metrics, and performance data.
 
 import random
 from datetime import datetime, timedelta
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from .base import BaseFactory, Faker, SequenceMixin, TraitMixin
 
@@ -413,7 +413,7 @@ class PerformanceMetricsFactory(BaseFactory):
 
 # Convenience functions for creating analysis-related collections
 def create_analysis_results(
-    count: int = 1, status: Optional[str] = None, **kwargs
+    count: int = 1, status: str | None = None, **kwargs
 ) -> list[dict[str, Any]]:
     """Create multiple analysis results."""
     results = []

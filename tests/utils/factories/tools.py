@@ -6,7 +6,7 @@ server configurations, client sessions, and transaction data.
 
 import random
 from datetime import datetime, timedelta
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from .base import BaseFactory, Faker, SequenceMixin
 
@@ -428,7 +428,7 @@ class MCPTransactionFactory(BaseFactory, SequenceMixin):
 
 # Convenience functions for creating tool-related collections
 def create_tool_execution_batch(
-    tool_names: Optional[list[str]] = None, count: int = 5, success_rate: float = 0.9
+    tool_names: list[str] | None = None, count: int = 5, success_rate: float = 0.9
 ) -> list[dict[str, Any]]:
     """Create a batch of tool execution results."""
     if tool_names is None:

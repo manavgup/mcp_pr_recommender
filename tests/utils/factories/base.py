@@ -9,7 +9,7 @@ import uuid
 from contextlib import suppress
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -376,7 +376,7 @@ def create_realistic_timestamp(days_ago: int = 0, hours_ago: int = 0) -> datetim
     return base + offset
 
 
-def generate_commit_message(commit_type: Optional[str] = None) -> str:
+def generate_commit_message(commit_type: str | None = None) -> str:
     """Generate a realistic commit message."""
     if commit_type is None:
         commit_type = random.choice(

@@ -6,7 +6,7 @@ file metadata, and file-related objects.
 
 import random
 from datetime import datetime, timedelta
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from .base import BaseFactory, Faker, TraitMixin
 
@@ -304,7 +304,7 @@ class FileMetadataFactory(BaseFactory):
 def create_file_changes(
     count: int = 5,
     risk_distribution: str = "mixed",
-    change_types: Optional[list[str]] = None,
+    change_types: list[str] | None = None,
     **kwargs,
 ) -> list[dict[str, Any]]:
     """Create a list of realistic file changes.

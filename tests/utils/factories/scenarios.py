@@ -5,7 +5,7 @@ workflow states, and integration test data.
 """
 
 from datetime import datetime
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from .base import BaseFactory, Faker
 from .files import create_file_changes
@@ -249,7 +249,7 @@ class WorkflowScenarioFactory(BaseFactory):
 
 # Convenience functions for creating scenario collections
 def create_repository_with_realistic_state(
-    total_commits: Optional[int] = None, total_branches: Optional[int] = None, **kwargs
+    total_commits: int | None = None, total_branches: int | None = None, **kwargs
 ) -> dict[str, Any]:
     """Create a repository with realistic state and history."""
     if total_commits is None:
@@ -274,7 +274,7 @@ def create_repository_with_realistic_state(
     return repo
 
 
-def create_scenario_suite(scenario_types: Optional[list[str]] = None) -> dict[str, Any]:
+def create_scenario_suite(scenario_types: list[str] | None = None) -> dict[str, Any]:
     """Create a comprehensive suite of test scenarios."""
     if scenario_types is None:
         scenario_types = [
@@ -313,7 +313,7 @@ def create_scenario_suite(scenario_types: Optional[list[str]] = None) -> dict[st
 
 
 def create_integration_test_scenario(
-    services: Optional[list[str]] = None, data_flows: Optional[list[str]] = None
+    services: list[str] | None = None, data_flows: list[str] | None = None
 ) -> dict[str, Any]:
     """Create scenario for integration testing across services."""
     if services is None:
