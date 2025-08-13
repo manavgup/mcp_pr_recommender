@@ -4,9 +4,10 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from mcp_shared_lib.models.git.changes import FileStatus
+
 from mcp_pr_recommender.models.pr.recommendations import ChangeGroup
 from mcp_pr_recommender.services.atomicity_validator import AtomicityValidator
-from mcp_shared_lib.models.git.changes import FileStatus
 
 
 @pytest.mark.unit

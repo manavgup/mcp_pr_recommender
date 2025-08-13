@@ -3,6 +3,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
+
 from mcp_pr_recommender.tools.feasibility_analyzer_tool import FeasibilityAnalyzerTool
 
 

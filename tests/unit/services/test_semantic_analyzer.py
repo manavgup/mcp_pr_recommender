@@ -4,14 +4,15 @@ import json
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from mcp_pr_recommender.models.pr.recommendations import ChangeGroup, PRRecommendation
-from mcp_pr_recommender.services.semantic_analyzer import SemanticAnalyzer
 from mcp_shared_lib.models import (
     ChangeCategorization,
     OutstandingChangesAnalysis,
     RiskAssessment,
 )
 from mcp_shared_lib.models.git.changes import FileStatus
+
+from mcp_pr_recommender.models.pr.recommendations import ChangeGroup, PRRecommendation
+from mcp_pr_recommender.services.semantic_analyzer import SemanticAnalyzer
 
 
 @pytest.mark.unit

@@ -52,7 +52,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: mcp_pr_recommender/.venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('mcp_pr_recommender/**/poetry.lock') }}
+          key: >-
+            venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{
+            hashFiles('mcp_pr_recommender/**/poetry.lock') }}
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'

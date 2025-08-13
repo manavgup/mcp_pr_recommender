@@ -3,6 +3,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
+
 from mcp_pr_recommender.tools.validator_tool import ValidatorTool
 
 
