@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-"""CLI module for mcp_pr_recommender."""
+"""CLI module for mcp_pr_recommender - simplified to match main.py pattern."""
 import argparse
+import logging
 import os
 import sys
 
-from mcp_shared_lib.server.runner import run_server
-from mcp_shared_lib.transports.config import TransportConfig
 from mcp_shared_lib.utils import logging_service
 
-from mcp_pr_recommender.main import create_server, register_tools
+from mcp_pr_recommender.main import main as run_main
 
 logger = logging_service.get_logger(__name__)
 
@@ -41,16 +40,16 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--transport", type=str, help="Transport type (stdio, http, websocket, sse)"
-    )
-    parser.add_argument("--config", type=str, help="Path to transport config YAML")
-    parser.add_argument(
-        "--port",
-        type=int,
-        help="Port to run the HTTP/WebSocket server on (overrides config/env)",
+        "--transport",
+        choices=["stdio", "streamable-http", "sse"],
+        default="stdio",
+        help="Transport protocol to use",
     )
     parser.add_argument(
-        "--host", type=str, help="Host to bind the server to (overrides config/env)"
+        "--host", default="127.0.0.1", help="Host to bind to (HTTP mode only)"
+    )
+    parser.add_argument(
+        "--port", type=int, default=9071, help="Port to bind to (HTTP mode only)"
     )
     parser.add_argument(
         "--log-level",
@@ -58,75 +57,47 @@ def parse_args() -> argparse.Namespace:
         default="INFO",
         help="Logging level",
     )
-    parser.add_argument(
-        "--skip-env-check",
-        action="store_true",
-        help="Skip environment variable validation (use with caution)",
-    )
 
     return parser.parse_args()
 
 
 def main() -> None:
-    """Run the main CLI entry point."""
+    """CLI entry point - delegates to main.py with CLI arguments."""
     args = parse_args()
 
-    # Check environment unless skipped
-    if not args.skip_env_check:
-        check_environment()
+    # Check environment first
+    check_environment()
 
-    logger.info("Starting MCP PR Recommender Server")
+    # Set up logging
+    logging.basicConfig(
+        level=getattr(logging, args.log_level.upper()),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
 
-    # Load config
-    if args.config:
-        config = TransportConfig.from_file(args.config)
-    else:
-        config = TransportConfig.from_env()
-        if args.transport:
-            config.type = args.transport
-        if args.port and config.type in ("http", "websocket"):
-            if config.type == "http":
-                if not config.http:
-                    from mcp_shared_lib.transports.config import HTTPConfig
-
-                    config.http = HTTPConfig()
-                config.http.port = args.port
-            elif config.type == "websocket":
-                if not config.websocket:
-                    from mcp_shared_lib.transports.config import WebSocketConfig
-
-                    config.websocket = WebSocketConfig()
-                config.websocket.port = args.port
-        if args.host and config.type in ("http", "websocket"):
-            if config.type == "http":
-                if not config.http:
-                    from mcp_shared_lib.transports.config import HTTPConfig
-
-                    config.http = HTTPConfig()
-                config.http.host = args.host
-            elif config.type == "websocket":
-                if not config.websocket:
-                    from mcp_shared_lib.transports.config import WebSocketConfig
-
-                    config.websocket = WebSocketConfig()
-                config.websocket.host = args.host
-
-    # Create and register server
-    mcp, services = create_server()
-    mcp.pr_generator = services["pr_generator"]
-    mcp.feasibility_analyzer = services["feasibility_analyzer"]
-    mcp.strategy_manager = services["strategy_manager"]
-    mcp.validator = services["validator"]
-    register_tools(mcp)
+    # Convert CLI args to sys.argv format that main.py expects
+    old_argv = sys.argv[:]
 
     try:
-        run_server(mcp, config, server_name="PR Recommender")
+        # Build argv for main.py
+        sys.argv = ["main.py"]
+        sys.argv.extend(["--transport", args.transport])
+        sys.argv.extend(["--host", args.host])
+        sys.argv.extend(["--port", str(args.port)])
+        sys.argv.extend(["--log-level", args.log_level])
+
+        # Call main.py's main function directly
+        logger.info("Delegating to main.py with CLI arguments")
+        run_main()
+
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
         sys.exit(0)
     except Exception as e:
         logger.error(f"Server error: {e}")
         sys.exit(1)
+    finally:
+        # Restore original argv
+        sys.argv = old_argv
 
 
 if __name__ == "__main__":

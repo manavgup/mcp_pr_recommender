@@ -393,6 +393,7 @@ async def discover_analyzer_capabilities():
         return {}
 
 
+@pytest.mark.unit
 async def test_messy_developer_workflow(analysis_data: dict[str, Any]):
     """Test the complete workflow for a messy developer scenario."""
     print("\n🎯 Testing 'Messy Developer' Workflow...")
@@ -738,6 +739,7 @@ async def _generate_pr_recommendations(pr_client, analysis_data):
         traceback.print_exc()
 
 
+@pytest.mark.unit
 async def test_full_integration():
     """Test full integration: analyzer -> recommender with comprehensive workflow."""
     print("🔗 Testing Full Integration (Analyzer -> Recommender)")
@@ -846,6 +848,7 @@ async def test_full_integration():
         return False
 
 
+@pytest.mark.unit
 async def test_pr_recommender_with_mock():
     """Test PR recommender with mock data."""
     print("🧪 Testing PR Recommender with mock data...")
@@ -992,6 +995,7 @@ def print_pr_recommendations(result):
         print(f"  📄 Result: {str(result)[:200]}...")
 
 
+@pytest.mark.unit
 async def test_connection_only():
     """Test basic connection to PR recommender."""
     print("🔌 Testing connection to PR Recommender...")

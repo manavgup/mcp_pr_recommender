@@ -69,7 +69,7 @@ class SemanticAnalyzer:
             ".history/",
             ".git/",
             "node_modules/",
-            ".DS_Store",
+            ".ds_store",
             "thumbs.db",
             ".pytest_cache/",
         ]
@@ -387,9 +387,9 @@ Please group these files into the optimal number of logical, atomic Pull Request
                 description=description,
                 files=group.file_paths,
                 branch_name=self._generate_branch_name(group),
-                priority=priority,  # type: ignore[arg-type]  # str vs Literal["high", "medium", "low"]
+                priority=priority,
                 estimated_review_time=review_time,
-                risk_level=risk_level,  # type: ignore[arg-type]  # str vs Literal["low", "medium", "high"]
+                risk_level=risk_level,
                 reasoning=group.reasoning,
                 dependencies=[],
                 labels=self._generate_labels(group),

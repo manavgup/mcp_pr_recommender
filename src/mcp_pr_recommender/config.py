@@ -3,7 +3,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class PRRecommenderSettings(BaseSettings):  # type: ignore[misc]
+class PRRecommenderSettings(BaseSettings):
     """PR recommender configuration."""
 
     model_config = SettingsConfigDict(

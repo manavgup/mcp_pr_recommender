@@ -12,7 +12,8 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
-from mcp_shared_lib.test_utils.factories import FileChangeFactory, create_file_changes
+
+from tests.utils.factories import FileChangeFactory, create_file_changes
 
 
 @pytest.fixture
