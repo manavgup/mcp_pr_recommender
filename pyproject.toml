@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mcp-pr-recommender"
-version = "0.1.0"
+version = "0.1.1"
 description = "AI-powered MCP server for intelligent PR grouping recommendations"
 authors = ["Manav Gupta <manavg@gmail.com>"]
 readme = "README.md"
@@ -38,7 +38,7 @@ pydantic-settings = "^2.10.1"
 fastapi = "^0.116.1"
 sse-starlette = "^2.4.1"
 uvicorn = "^0.35.0"
-mcp-shared-lib = {git = "https://github.com/manavgup/mcp_shared_lib.git", branch = "master"}
+mcp-shared-lib = "^0.1.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.3"
